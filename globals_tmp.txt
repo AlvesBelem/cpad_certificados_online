@@ -1,0 +1,263 @@
+﻿@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 150 40% 97%;
+    --foreground: 210 25% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 25% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 25% 12%;
+    --primary: 152 55% 45%;
+    --primary-foreground: 156 50% 98%;
+    --secondary: 120 35% 90%;
+    --secondary-foreground: 160 35% 18%;
+    --muted: 155 25% 92%;
+    --muted-foreground: 160 18% 35%;
+    --accent: 170 40% 92%;
+    --accent-foreground: 170 45% 22%;
+    --destructive: 0 72% 52%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 150 22% 85%;
+    --input: 150 22% 85%;
+    --ring: 152 55% 45%;
+    --chart-1: 152 55% 45%;
+    --chart-2: 170 50% 50%;
+    --chart-3: 125 45% 40%;
+    --chart-4: 190 55% 55%;
+    --chart-5: 42 90% 62%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 210 22% 10%;
+    --foreground: 150 15% 92%;
+    --card: 210 22% 12%;
+    --card-foreground: 150 15% 92%;
+    --popover: 210 22% 12%;
+    --popover-foreground: 150 15% 92%;
+    --primary: 152 55% 55%;
+    --primary-foreground: 152 75% 12%;
+    --secondary: 160 25% 18%;
+    --secondary-foreground: 150 15% 90%;
+    --muted: 180 16% 18%;
+    --muted-foreground: 170 12% 70%;
+    --accent: 140 28% 20%;
+    --accent-foreground: 140 40% 88%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 18% 24%;
+    --input: 210 18% 24%;
+    --ring: 152 55% 55%;
+    --chart-1: 152 55% 55%;
+    --chart-2: 170 50% 58%;
+    --chart-3: 125 45% 50%;
+    --chart-4: 190 55% 60%;
+    --chart-5: 42 90% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+  }
+}
+
+/* Certificate scaling */
+.certificate-preview-wrapper {
+  width: 100%;
+  position: relative;
+}
+
+.certificate-preview,
+.certificate-preview-print {
+  /* Mantem a paleta original dos certificados, mesmo com o tema do site */
+  --background: 0 0% 100%;
+  --foreground: 0 0% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 0 0% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 10%;
+  --primary: 0 0% 9%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 0 0% 96.1%;
+  --secondary-foreground: 0 0% 9%;
+  --muted: 0 0% 96.1%;
+  --muted-foreground: 0 0% 45.1%;
+  --accent: 0 0% 96.1%;
+  --accent-foreground: 0 0% 9%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 89.8%;
+  --input: 0 0% 89.8%;
+  --ring: 0 0% 3.9%;
+}
+
+.certificate-mobile-photo {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.certificate-mobile-photo-frame {
+  width: 100%;
+  max-width: 330px;
+  aspect-ratio: 16 / 9;
+  border-radius: 1.5rem;
+  border: 1px dashed hsl(var(--border));
+  background: linear-gradient(135deg, hsl(var(--muted)), #fff);
+  padding: 1.25rem;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+  gap: 0.5rem;
+}
+
+.mobile-hidden {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .mobile-hidden {
+    position: static;
+    left: auto;
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.certificate-content {
+  --certificate-frame-color: currentColor;
+}
+
+.certificate-frame-bands::before,
+.certificate-frame-bands::after {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  height: 28px;
+  pointer-events: none;
+  --frame: var(--certificate-frame-color);
+  --frame-soft: rgba(255, 255, 255, 0.55);
+  background:
+    radial-gradient(circle at 18px 50%, var(--frame) 0 6px, transparent 7px) 0 0 / 46px 32px
+      repeat-x,
+    radial-gradient(circle at 36px 50%, var(--frame) 0 4px, transparent 5px) 0 0 / 46px 32px
+      repeat-x,
+    linear-gradient(
+        to right,
+        transparent 0%,
+        var(--frame-soft) 8%,
+        var(--frame) 14%,
+        var(--frame) 86%,
+        var(--frame-soft) 92%,
+        transparent 100%
+      )
+      0 10px / 100% 2px no-repeat,
+    linear-gradient(
+        to right,
+        transparent 0%,
+        var(--frame-soft) 8%,
+        var(--frame) 14%,
+        var(--frame) 86%,
+        var(--frame-soft) 92%,
+        transparent 100%
+      )
+      0 calc(100% - 10px) / 100% 2px no-repeat;
+  opacity: 0.8;
+}
+
+.certificate-frame-bands::before {
+  top: 12px;
+}
+
+.certificate-frame-bands::after {
+  bottom: 12px;
+}
+
+@page {
+  size: A4 landscape;
+  margin: 0;
+}
+
+@media print {
+  body {
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .certificate-print-root,
+  .certificate-print-root * {
+    visibility: visible;
+  }
+
+  .certificate-print-root {
+    position: absolute;
+    inset: 0;
+    display: flex !important;
+    align-items: flex-start;
+    justify-content: center;
+    background: white;
+    padding-top: 0;
+  }
+
+  .certificate-preview-wrapper {
+    --certificate-scale: 1 !important;
+  }
+
+  .certificate-preview {
+    display: none !important;
+  }
+
+  .certificate-preview-print {
+    position: static;
+    inset: auto;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    margin: auto !important;
+    width: 297mm;
+    height: 210mm;
+    margin-top: 0 !important;
+    transform: none;
+  }
+
+  .certificate-content {
+    margin-top: 50mm !important;
+    page-break-inside: avoid;
+  }
+
+  .certificate-header {
+    flex-direction: row;
+    align-items: center;
+    gap: 2.5rem;
+    text-align: left;
+  }
+
+  .certificate-header__info {
+    text-align: left;
+  }
+
+  .certificate-form {
+    display: none;
+  }
+}

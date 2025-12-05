@@ -1,0 +1,275 @@
+// Prisma schema for Adigreja multi-tenant MVP
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Igreja {
+  id                   String          @id @default(cuid())
+  nome                 String
+  logoUrl              String?
+  logoPath             String?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  plano                Plano           @default(BASIC)
+  status               StatusIgreja    @default(ATIVA)
+  assinaturaPausada    Boolean         @default(false)
+  dataExpira           DateTime?
+  trial                Boolean         @default(false)
+  enderecoId           String?
+  endereco             Endereco?       @relation(fields: [enderecoId], references: [id], onDelete: SetNull)
+  tipoEstrutura        TipoIgreja      @default(INDEPENDENTE)
+  matrizId             String?
+  matriz               Igreja?         @relation("HierarquiaIgreja", fields: [matrizId], references: [id], onDelete: SetNull)
+  congregacoes         Igreja[]        @relation("HierarquiaIgreja")
+  criadoEm             DateTime        @default(now())
+  usuarios             User[]
+  turmas               Turma[]
+  alunos               Aluno[]
+  responsaveis         ResponsavelEscola[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String?
+  image     String?
+  provider  String?
+  role      Role     @default(USER)
+  tipoUsuario TipoUsuario?
+  emailVerified Boolean @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  igrejaId  String
+  igrejaStatus StatusIgreja @default(ATIVA)
+  igreja    Igreja   @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
+  accounts  Account[]
+  sessions  Session[]
+  verificacoes Verification[]
+  aulasMinistradas Aula[]
+  responsavel ResponsavelEscola? @relation("ResponsavelUsuario")
+  transferenciasRegistradas TransferenciaAluno[]
+}
+
+model Turma {
+  id        String   @id @default(cuid())
+  nome      String
+  descricao String?
+  anoLetivo Int      @default(2024)
+  professorResponsavelId String?
+  coordenadorResponsavelId String?
+  secretarioResponsavelId String?
+  igrejaId  String
+  igreja    Igreja   @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
+  professorResponsavel ResponsavelEscola? @relation("ProfessorResponsavel", fields: [professorResponsavelId], references: [id])
+  coordenadorResponsavel ResponsavelEscola? @relation("CoordenadorResponsavel", fields: [coordenadorResponsavelId], references: [id])
+  secretarioResponsavel ResponsavelEscola? @relation("SecretarioResponsavel", fields: [secretarioResponsavelId], references: [id])
+  alunos    Aluno[]
+  presencas Presenca[]
+  aulas     Aula[]
+  ativo     Boolean  @default(true)
+  transferenciasComoOrigem TransferenciaAluno[] @relation("TransferenciaTurmaAnterior")
+  transferenciasComoDestino TransferenciaAluno[] @relation("TransferenciaTurmaNova")
+}
+
+model Aluno {
+  id             String     @id @default(cuid())
+  nome           String
+  telefone       String?
+  dataNascimento DateTime?
+  dataMatricula  DateTime?
+  numeroMatricula String?   @unique
+  enderecoId     String?
+  endereco       Endereco?  @relation(fields: [enderecoId], references: [id], onDelete: SetNull)
+  igrejaId       String
+  igreja         Igreja     @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
+  turmaId        String?
+  turma          Turma?     @relation(fields: [turmaId], references: [id], onDelete: SetNull)
+  presencas      Presenca[]
+  ativo          Boolean    @default(true)
+  transferencias TransferenciaAluno[]
+}
+
+model Presenca {
+  id       String   @id @default(cuid())
+  alunoId  String
+  turmaId  String
+  data     DateTime
+  presente Boolean  @default(true)
+  aluno    Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  turma    Turma    @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+
+  @@index([alunoId])
+  @@index([turmaId])
+}
+
+model Aula {
+  id                 String   @id @default(cuid())
+  turmaId            String
+  professorId        String
+  data               DateTime
+  alunosMatriculados Int
+  ausentes           Int
+  presentes          Int
+  visitantes         Int
+  totalAssistencias  Int
+  biblias            Int
+  revistas           Int
+  revisao            Int
+  ofertas            Decimal  @db.Decimal(10, 2)
+  observacao         String?
+  turma              Turma    @relation(fields: [turmaId], references: [id], onDelete: Cascade)
+  professor          User     @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  ativo              Boolean  @default(true)
+
+  @@unique([turmaId, data])
+  @@index([professorId])
+}
+
+model ResponsavelEscola {
+  id          String        @id @default(cuid())
+  nome        String
+  email       String
+  telefone    String?
+  enderecoId  String?
+  endereco    Endereco?     @relation(fields: [enderecoId], references: [id], onDelete: SetNull)
+  tipo        TipoUsuario
+  igrejaId    String
+  igreja      Igreja        @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
+  userId      String?       @unique
+  user        User?         @relation("ResponsavelUsuario", fields: [userId], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  turmasProfessor   Turma[] @relation("ProfessorResponsavel")
+  turmasCoordenador Turma[] @relation("CoordenadorResponsavel")
+  turmasSecretario  Turma[] @relation("SecretarioResponsavel")
+  ativo        Boolean       @default(true)
+
+  @@unique([igrejaId, email])
+}
+
+model Endereco {
+  id           String               @id @default(cuid())
+  logradouro   String?
+  numero       String?
+  complemento  String?
+  bairro       String?
+  cidade       String?
+  estado       String?
+  cep          String?
+  referencia   String?
+  criadoEm     DateTime             @default(now())
+  atualizadoEm DateTime             @updatedAt
+  igrejas      Igreja[]
+  alunos       Aluno[]
+  responsaveis ResponsavelEscola[]
+}
+
+model Account {
+  id                    String   @id @default(cuid())
+  userId                String
+  providerId            String
+  accountId             String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  expiresAt DateTime
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String   @unique
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  userId     String?
+  user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Jwks {
+  id         String   @id @default(cuid())
+  alg        String?
+  crv        String?
+  publicKey  String
+  privateKey String
+  createdAt  DateTime @default(now())
+}
+
+model StripeEvent {
+  id        String   @id
+  createdAt DateTime @default(now())
+}
+
+model TransferenciaAluno {
+  id               String   @id @default(cuid())
+  alunoId          String
+  turmaAnteriorId  String?
+  turmaNovaId      String
+  motivo           String
+  dataTransferencia DateTime @default(now())
+  registradoPorId  String?
+  aluno            Aluno    @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  turmaAnterior    Turma?   @relation("TransferenciaTurmaAnterior", fields: [turmaAnteriorId], references: [id], onDelete: SetNull)
+  turmaNova        Turma    @relation("TransferenciaTurmaNova", fields: [turmaNovaId], references: [id], onDelete: Cascade)
+  registradoPor    User?    @relation(fields: [registradoPorId], references: [id], onDelete: SetNull)
+  createdAt        DateTime @default(now())
+
+  @@index([alunoId])
+  @@index([turmaNovaId])
+}
+
+enum Plano {
+  BASIC
+  PREMIUM
+}
+
+enum StatusIgreja {
+  ATIVA
+  BLOQUEADA
+}
+
+enum Role {
+  SUPERADMIN
+  ADMIN
+  USER
+  ALUNO
+}
+
+enum TipoUsuario {
+  PROFESSOR
+  COORDENADOR
+  SECRETARIO
+}
+
+enum TipoIgreja {
+  MATRIZ
+  CONGREGACAO
+  INDEPENDENTE
+}
