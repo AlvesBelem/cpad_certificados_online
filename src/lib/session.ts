@@ -1,6 +1,5 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import type { TipoIgreja } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import type { AuthSession } from "@/lib/auth";
 import { buildIgrejaScope } from "@/lib/igreja-scope";
@@ -8,7 +7,7 @@ import { buildIgrejaScope } from "@/lib/igreja-scope";
 export type SessionWithScope = AuthSession & {
   user: AuthSession["user"] & {
     igrejasPermitidas: string[];
-    igrejaTipo?: TipoIgreja;
+    igrejaTipo?: string;
     igrejaMatrizId?: string | null;
     assinaturaPausada?: boolean;
     assinaturaPausadaPorMatriz?: boolean;

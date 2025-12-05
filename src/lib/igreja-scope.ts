@@ -1,15 +1,14 @@
-import { StatusIgreja, TipoIgreja } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export type IgrejaScope = {
   igrejaId: string;
-  tipo: TipoIgreja;
+  tipo: string;
   matrizId: string | null;
   congregacoesIds: string[];
   igrejasPermitidas: string[];
   assinaturaPausada: boolean;
   assinaturaPausadaPorMatriz: boolean;
-  status: StatusIgreja;
+  status: string;
 };
 
 export async function buildIgrejaScope(igrejaId: string): Promise<IgrejaScope> {
@@ -35,23 +34,23 @@ export async function buildIgrejaScope(igrejaId: string): Promise<IgrejaScope> {
   if (!igreja) {
     return {
       igrejaId,
-      tipo: TipoIgreja.INDEPENDENTE,
+      tipo: "INDEPENDENTE",
       matrizId: null,
       congregacoesIds: [],
       igrejasPermitidas: [igrejaId],
       assinaturaPausada: false,
       assinaturaPausadaPorMatriz: false,
-      status: StatusIgreja.ATIVA,
+      status: "ATIVA",
     };
   }
 
   const congregacoesIds =
-    igreja.tipoEstrutura === TipoIgreja.MATRIZ
+    igreja.tipoEstrutura === "MATRIZ"
       ? igreja.congregacoes.map((item) => item.id)
       : [];
 
   const igrejasPermitidas =
-    igreja.tipoEstrutura === TipoIgreja.MATRIZ
+    igreja.tipoEstrutura === "MATRIZ"
       ? [igreja.id, ...congregacoesIds]
       : [igreja.id];
 

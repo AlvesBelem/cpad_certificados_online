@@ -39,9 +39,15 @@ const steps = [
 ];
 
 const highlights = [
-  { title: "Templates aprovados", description: "Arte revisada e pronta para uso. Não alteramos o padrão dos certificados.", icon: <ShieldCheck className="h-5 w-5 text-primary" /> },
-  { title: "Sem login ou pagamento", description: "Acesso livre aos modelos. Basta abrir, preencher e imprimir.", icon: <CheckCircle2 className="h-5 w-5 text-primary" /> },
-  { title: "Rápido e responsivo", description: "Funciona bem no celular e no desktop. Preenchimento fluido em poucos minutos.", icon: <Clock className="h-5 w-5 text-primary" /> },
+  { title: "Templates aprovados", description: "Arte revisada e pronta para uso. Mantemos o padrao visual original.", icon: <ShieldCheck className="h-5 w-5 text-primary" /> },
+  { title: "Cobranca simples", description: "Pague so o que emitir com descontos progressivos por volume.", icon: <CheckCircle2 className="h-5 w-5 text-primary" /> },
+  { title: "Entrega rapida", description: "PDF pronto para imprimir logo apos o pagamento.", icon: <Clock className="h-5 w-5 text-primary" /> },
+];
+
+const pricingTiers = [
+  { title: "1 a 10 certificados", price: "R$ 2,50 cada", description: "Para datas pontuais e eventos menores." },
+  { title: "11 a 50 certificados", price: "R$ 2,00 cada", description: "Melhor custo para periodos com varias turmas." },
+  { title: "51 certificados ou mais", price: "R$ 1,80 cada", description: "Desconto para quem emite em escala." },
 ];
 
 export default function LandingPage() {
@@ -49,6 +55,7 @@ export default function LandingPage() {
     <main className="bg-background text-foreground">
       <section className="mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 py-16 md:px-10 lg:px-16">
         <Hero />
+        <Pricing />
         <TemplateGrid />
         <HowItWorks />
         <Highlights />
@@ -64,13 +71,13 @@ function Hero() {
     <div className="grid gap-10 md:grid-cols-[1.1fr,0.9fr] md:items-center">
       <div className="space-y-6">
         <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-          Gerador de certificados
+          Planos pagos por certificado
         </p>
         <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground md:text-5xl">
-          Certificados prontos para batismo, casamento e ministério em poucos cliques.
+          Certificados prontos para batismo, casamento e ministerio com cobranca por volume.
         </h1>
         <p className="text-balance text-lg text-muted-foreground">
-          Todos os modelos já estão desenhados. Basta escolher, preencher e imprimir. Sem conta, sem integração de pagamento.
+          Versao para igrejas, eventos e pessoas que precisam emitir certificados pagos. Escolha o modelo, pague por unidade e gere o PDF em minutos.
         </p>
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild size="lg" className="h-12 px-8 text-base">
@@ -80,15 +87,15 @@ function Hero() {
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="h-12 px-8 text-base">
-            <Link href="#modelos">Ver modelos disponíveis</Link>
+            <Link href="/login">Cadastrar ou fazer login</Link>
           </Button>
         </div>
         <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
           <span className="flex items-center gap-2">
-            <Printer className="h-4 w-4 text-primary" /> Impressão a partir do PDF gerado
+            <Printer className="h-4 w-4 text-primary" /> Impressao a partir do PDF gerado
           </span>
           <span className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-primary" /> Sem login
+            <CheckCircle2 className="h-4 w-4 text-primary" /> Valores progressivos por volume
           </span>
           <span className="flex items-center gap-2">
             <ShieldCheck className="h-4 w-4 text-primary" /> Modelos revisados
@@ -98,9 +105,9 @@ function Hero() {
 
       <Card className="border-primary/30 bg-primary/5">
         <CardHeader>
-          <CardTitle>O que você encontra aqui</CardTitle>
+          <CardTitle>O que voce encontra aqui</CardTitle>
           <CardDescription className="text-base">
-            Certificados aprovados por igrejas locais, com foco em clareza e em impressão.
+            Certificados aprovados por igrejas locais, focados em clareza e em impressao.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
@@ -113,12 +120,39 @@ function Hero() {
             <span className="text-xl font-semibold text-foreground">Sim</span>
           </div>
           <div className="flex items-center justify-between rounded-xl border border-primary/15 bg-background/60 px-4 py-3">
-            <span>Uso gratuito</span>
-            <span className="text-xl font-semibold text-foreground">100%</span>
+            <span>Pagamento por emissao</span>
+            <span className="text-xl font-semibold text-foreground">De R$ 1,80 a R$ 2,50</span>
           </div>
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+function Pricing() {
+  return (
+    <section className="space-y-6 rounded-3xl border border-border/80 bg-card px-6 py-10">
+      <div className="space-y-3">
+        <p className="text-sm font-semibold uppercase tracking-widest text-primary">Planos pagos</p>
+        <h2 className="text-3xl font-bold tracking-tight">Pague apenas pelos certificados que emitir.</h2>
+        <p className="text-muted-foreground">
+          Valores por faixa para atender tanto eventos unicos quanto emissoes recorrentes.
+        </p>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        {pricingTiers.map((tier) => (
+          <Card key={tier.title} className="border-border/70 bg-background/70">
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-lg">{tier.title}</CardTitle>
+              <CardDescription className="text-base font-semibold text-foreground">{tier.price}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">{tier.description}</p>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -187,9 +221,9 @@ function HowItWorks() {
     <section className="grid gap-6 rounded-3xl border border-border/80 bg-card px-6 py-10 md:grid-cols-[1fr,1.1fr]">
       <div className="space-y-4">
         <p className="text-sm font-semibold uppercase tracking-widest text-primary">Como funciona</p>
-        <h2 className="text-3xl font-bold tracking-tight">Um fluxo simples para gerar certificados sem complicação.</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Um fluxo simples para gerar certificados pagos.</h2>
         <p className="text-muted-foreground">
-          Não há login, dashboard ou pagamentos. Apenas escolha o modelo, preencha e exporte.
+          A cobranca acontece por certificado dentro das faixas acima. Escolha o modelo, preencha e exporte o PDF.
         </p>
         <Button asChild className="mt-2 w-fit">
           <Link href="/certificados">
@@ -225,9 +259,9 @@ function Highlights() {
     <section className="space-y-6">
       <div className="space-y-3">
         <p className="text-sm font-semibold uppercase tracking-widest text-primary">Diferenciais</p>
-        <h2 className="text-3xl font-bold tracking-tight">Pensado para igrejas que precisam de agilidade.</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Pensado para quem precisa pagar e emitir em escala.</h2>
         <p className="text-muted-foreground">
-          Mantivemos apenas o essencial: os certificados e o que você precisa para preenchê-los rapidamente.
+          Mantivemos apenas o essencial: os certificados, a cobranca por faixa e o PDF pronto para impressao.
         </p>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
@@ -256,10 +290,10 @@ function FinalCta() {
         Pronto para usar
       </p>
       <h2 className="mt-3 text-3xl font-bold tracking-tight">
-        Acesse os certificados e gere o documento agora mesmo.
+        Acesse os certificados pagos e gere o documento agora mesmo.
       </h2>
       <p className="mt-2 text-muted-foreground">
-        Nenhum outro módulo, nenhum cadastro. Somente os modelos revisados e prontos para impressão.
+        Valores por quantidade emitida e PDF pronto logo apos o pagamento. Sem burocracia extra.
       </p>
       <Button asChild size="lg" className="mt-6">
         <Link href="/certificados">
@@ -277,7 +311,7 @@ function Footer() {
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-6 py-10 text-sm text-muted-foreground md:flex-row md:items-center md:justify-between">
         <div>
           <p className="font-semibold text-foreground">AdiGreja Certificados</p>
-          <p>Site público focado apenas na emissão de certificados.</p>
+          <p>Site publico focado na emissao paga de certificados.</p>
         </div>
         <div className="flex flex-wrap gap-4">
           <Link href="/certificados" className="hover:text-foreground">
@@ -290,8 +324,9 @@ function Footer() {
             Casamento
           </Link>
         </div>
-        <p className="text-xs">{new Date().getFullYear()} Adigreja. Modelos mantidos conforme o padrão original.</p>
+        <p className="text-xs">{new Date().getFullYear()} Adigreja. Modelos mantidos conforme o padrao original.</p>
       </div>
     </footer>
   );
 }
+

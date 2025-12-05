@@ -5,7 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -16,14 +16,14 @@ model Igreja {
   logoPath             String?
   stripeCustomerId     String?
   stripeSubscriptionId String?
-  plano                Plano           @default(BASIC)
-  status               StatusIgreja    @default(ATIVA)
+  plano                String         @default("BASIC")
+  status               String         @default("ATIVA")
   assinaturaPausada    Boolean         @default(false)
   dataExpira           DateTime?
   trial                Boolean         @default(false)
   enderecoId           String?
   endereco             Endereco?       @relation(fields: [enderecoId], references: [id], onDelete: SetNull)
-  tipoEstrutura        TipoIgreja      @default(INDEPENDENTE)
+  tipoEstrutura        String          @default("INDEPENDENTE")
   matrizId             String?
   matriz               Igreja?         @relation("HierarquiaIgreja", fields: [matrizId], references: [id], onDelete: SetNull)
   congregacoes         Igreja[]        @relation("HierarquiaIgreja")
@@ -41,13 +41,13 @@ model User {
   password  String?
   image     String?
   provider  String?
-  role      Role     @default(USER)
-  tipoUsuario TipoUsuario?
+  role      String   @default("USER")
+  tipoUsuario String?
   emailVerified Boolean @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   igrejaId  String
-  igrejaStatus StatusIgreja @default(ATIVA)
+  igrejaStatus String @default("ATIVA")
   igreja    Igreja   @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
   accounts  Account[]
   sessions  Session[]
@@ -122,7 +122,7 @@ model Aula {
   biblias            Int
   revistas           Int
   revisao            Int
-  ofertas            Decimal  @db.Decimal(10, 2)
+  ofertas            Float
   observacao         String?
   turma              Turma    @relation(fields: [turmaId], references: [id], onDelete: Cascade)
   professor          User     @relation(fields: [professorId], references: [id], onDelete: Cascade)
@@ -139,7 +139,7 @@ model ResponsavelEscola {
   telefone    String?
   enderecoId  String?
   endereco    Endereco?     @relation(fields: [enderecoId], references: [id], onDelete: SetNull)
-  tipo        TipoUsuario
+  tipo        String
   igrejaId    String
   igreja      Igreja        @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
   userId      String?       @unique
@@ -243,33 +243,4 @@ model TransferenciaAluno {
 
   @@index([alunoId])
   @@index([turmaNovaId])
-}
-
-enum Plano {
-  BASIC
-  PREMIUM
-}
-
-enum StatusIgreja {
-  ATIVA
-  BLOQUEADA
-}
-
-enum Role {
-  SUPERADMIN
-  ADMIN
-  USER
-  ALUNO
-}
-
-enum TipoUsuario {
-  PROFESSOR
-  COORDENADOR
-  SECRETARIO
-}
-
-enum TipoIgreja {
-  MATRIZ
-  CONGREGACAO
-  INDEPENDENTE
 }

@@ -1,4 +1,4 @@
-import { PrismaClient, Plano, StatusIgreja } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
 
 const globalForPrisma = globalThis as unknown as {
@@ -34,7 +34,7 @@ function ensureUserHasIgreja(client: PrismaClient) {
         igreja?: unknown;
         name?: string | null;
         email?: string | null;
-        igrejaStatus?: StatusIgreja;
+        igrejaStatus?: string;
         [key: string]: unknown;
       };
       const data = params.args.data as UserCreateData;
@@ -65,8 +65,8 @@ function ensureUserHasIgreja(client: PrismaClient) {
         const igreja = await typedClient.igreja.create({
           data: {
             nome: churchName,
-            plano: Plano.BASIC,
-            status: StatusIgreja.ATIVA,
+            plano: "BASIC",
+            status: "ATIVA",
             trial: true,
             dataExpira: trialEndsAt,
           },

@@ -3,7 +3,6 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { jwt } from "better-auth/plugins";
 import type { SocialProviders } from "@better-auth/core/social-providers";
 import { prisma } from "@/lib/prisma";
-import { StatusIgreja } from "@prisma/client";
 
 const defaultAppUrl = "http://localhost:3000";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? defaultAppUrl;
@@ -25,7 +24,7 @@ export const auth = betterAuth({
   appName: "AdiGreja",
   baseURL: appUrl,
   secret: process.env.BETTER_AUTH_SECRET,
-  database: prismaAdapter(prisma, { provider: "postgresql" }),
+  database: prismaAdapter(prisma, { provider: "sqlite" }),
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
@@ -45,7 +44,7 @@ export const auth = betterAuth({
       igrejaStatus: {
         type: "string",
         required: true,
-        defaultValue: StatusIgreja.ATIVA,
+        defaultValue: "ATIVA",
       },
     },
   },
@@ -79,7 +78,7 @@ export const auth = betterAuth({
             data: {
               nome: churchName,
               plano: "BASIC", // Usando string direta para evitar problema de import
-              status: StatusIgreja.ATIVA,
+              status: "ATIVA",
               trial: true,
               dataExpira: trialEndsAt,
             },
