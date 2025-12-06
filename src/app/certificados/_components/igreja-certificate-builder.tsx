@@ -4,13 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
-import { ShoppingCart, X } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
 import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
-import { useCart } from "@/hooks/use-cart";
+import { useCartContext } from "@/components/cart/cart-provider";
+import { useCartSheet } from "@/components/cart/cart-sheet-context";
+import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
+import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 import { CertificateForm } from "./CertificateForm";
 
 const DEFAULT_LOGO = "/igreja.png";
@@ -35,6 +37,19 @@ type Campos = {
   nomeSecretario: string;
   versiculo: string;
 };
+
+const BULK_FIELD_KEYS: (keyof Campos)[] = [
+  "nomeBatizando",
+  "dataBatismo",
+  "localBatismo",
+  "cidade",
+  "estado",
+  "nomePastor",
+  "nomeSecretario",
+  "versiculo",
+];
+
+const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 
 type CertificateInnerProps = {
   logoSrc: string;
@@ -158,8 +173,8 @@ export function IgrejaCertificateBuilder({
     return label ? `Certificado ${label}` : "Certificado";
   }, [certificateTitle, resolvedSlug]);
 
-  const { addItem, formatted, mutating: isAddingToCart, error: cartError } = useCart();
-  const [showCartPanel, setShowCartPanel] = useState(false);
+  const { addItem, formatted, mutating: isAddingToCart, error: cartError } = useCartContext();
+  const { openCart } = useCartSheet();
   const isReady = useMemo(() => {
     const requiredFields: (keyof Campos)[] = [
       "nomeBatizando",
@@ -181,14 +196,6 @@ export function IgrejaCertificateBuilder({
       toast.error(cartError);
     }
   }, [cartError]);
-
-  useEffect(() => {
-    if (formatted?.items?.length) {
-      setShowCartPanel(true);
-      const timer = setTimeout(() => setShowCartPanel(false), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [formatted?.items?.length]);
 
   const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
@@ -222,8 +229,10 @@ export function IgrejaCertificateBuilder({
         certificateSlug: resolvedSlug,
         title: resolvedTitle,
         quantity: 1,
+        summary: campos.nomeBatizando?.trim() || undefined,
       });
       toast.success("Certificado adicionado ao carrinho");
+      openCart();
       if (updated.pricing.upsell) {
         const nextUnit = currencyFormatter.format(updated.pricing.nextUnitPriceCents! / 100);
         const nextTotal = currencyFormatter.format(updated.pricing.upsell.newTotalCents / 100);
@@ -235,7 +244,11 @@ export function IgrejaCertificateBuilder({
       const message = err instanceof Error ? err.message : "Falha ao adicionar ao carrinho.";
       toast.error(message);
     }
-  }, [addItem, currencyFormatter, resolvedSlug, resolvedTitle]);
+  }, [addItem, campos.nomeBatizando, currencyFormatter, isReady, openCart, resolvedSlug, resolvedTitle]);
+
+  const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
+    setCampos((prev) => ({ ...prev, ...row }));
+  }, []);
 
   const dataFormatada = campos.dataBatismo
     ? new Date(campos.dataBatismo).toLocaleDateString("pt-BR")
@@ -243,48 +256,12 @@ export function IgrejaCertificateBuilder({
 
   return (
     <section className="certificate-print-root flex flex-col gap-6 print:block">
-      <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/80 px-4 py-3 shadow-sm print:hidden">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.3em] text-primary/70">Carrinho</p>
-          <p className="text-sm text-muted-foreground">
-            Certificados adicionados aparecem aqui; painel recolhe em 5 segundos.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/60 bg-background text-primary transition hover:border-primary/50 hover:bg-primary/5"
-          onClick={() => setShowCartPanel((prev) => !prev)}
-          aria-label="Abrir carrinho"
-        >
-          <ShoppingCart className="h-5 w-5" />
-          {formatted?.items?.length ? (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-xs font-semibold text-background">
-              {formatted.items.length}
-            </span>
-          ) : null}
-        </button>
-      </div>
-      <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/80 px-4 py-3 shadow-sm print:hidden">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-[0.3em] text-primary/70">Carrinho</p>
-          <p className="text-sm text-muted-foreground">
-            Certificados adicionados aparecem aqui; painel recolhe em 5 segundos.
-          </p>
-        </div>
-        <button
-          type="button"
-          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/60 bg-background text-primary transition hover:border-primary/50 hover:bg-primary/5"
-          onClick={() => setShowCartPanel((prev) => !prev)}
-          aria-label="Abrir carrinho"
-        >
-          <ShoppingCart className="h-5 w-5" />
-          {formatted?.items?.length ? (
-            <span className="absolute -right-1 -top-1 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1 text-xs font-semibold text-background">
-              {formatted.items.length}
-            </span>
-          ) : null}
-        </button>
-      </div>
+      <BulkImportPanel
+        certificateSlug={resolvedSlug}
+        certificateTitle={resolvedTitle}
+        fields={BULK_FIELDS}
+        onApplyRow={handleApplyBulkRow}
+      />
       {/* Form container */}
       <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
         <div className="space-y-1">
@@ -373,59 +350,6 @@ export function IgrejaCertificateBuilder({
       >
         <CertificateInner logoSrc={logoSrc} igrejaNome={igrejaNome} campos={campos} dataFormatada={dataFormatada} />
       </CertificatePreview>
-
-      {/* Slide-in cart panel */}
-      <div
-        className={`pointer-events-auto fixed right-4 top-24 z-40 w-80 max-w-full transition-all duration-300 ${
-          showCartPanel ? "translate-x-0 opacity-100" : "translate-x-[110%] opacity-0"
-        }`}
-      >
-        <div className="rounded-2xl border border-border/70 bg-background/95 shadow-xl">
-          <div className="flex items-center justify-between border-b border-border/60 px-4 py-3">
-            <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-              <ShoppingCart className="h-4 w-4 text-primary" />
-              Carrinho
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowCartPanel(false)}
-              className="rounded-full p-1 text-muted-foreground transition hover:bg-muted"
-              aria-label="Fechar carrinho"
-            >
-              <X className="h-4 w-4" />
-            </button>
-          </div>
-          <div className="max-h-64 space-y-3 overflow-y-auto px-4 py-3 text-sm">
-            {formatted?.items?.length ? (
-              formatted.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex items-center justify-between rounded-lg border border-border/60 bg-background/70 px-3 py-2"
-                >
-                  <div>
-                    <p className="font-semibold text-foreground">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">Qtd: {item.quantity}</p>
-                  </div>
-                  <span className="text-xs text-primary">
-                    {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(item.totalCents / 100)}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground">Nenhum certificado no carrinho.</p>
-            )}
-          </div>
-          <div className="border-t border-border/60 px-4 py-3 text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Total</span>
-              <span className="font-semibold text-foreground">{formatted?.pricing.total ?? "R$ 0,00"}</span>
-            </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Painel fecha sozinho em 5 segundos ou clique para abrir/fechar.
-            </p>
-          </div>
-        </div>
-      </div>
     </section>
   );
 }

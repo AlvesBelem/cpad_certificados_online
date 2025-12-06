@@ -165,7 +165,7 @@ function TemplateGrid() {
       setCurrentIndex((prev) => (prev + 1) % total);
     }, 3500);
     return () => clearInterval(interval);
-  }, [certificatePreviews.length]);
+  }, []);
 
   return (
     <section id="modelos" className="space-y-6">

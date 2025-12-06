@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2, Lock, Mail, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,24 @@ import { Label } from "@/components/ui/label";
 type Mode = "login" | "signup";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginContent />
+    </Suspense>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <main className="mx-auto flex min-h-[80vh] w-full max-w-5xl items-center justify-center px-6 py-12 md:px-10 lg:px-16">
+      <div className="rounded-2xl border border-dashed border-border/60 bg-card/70 px-6 py-10 text-center text-sm text-muted-foreground">
+        Carregando formulário de login...
+      </div>
+    </main>
+  );
+}
+
+function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/certificados";

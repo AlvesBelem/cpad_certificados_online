@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
+import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
+import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 
 const DEFAULT_LOGO = "/igreja.png";
 const DEFAULT_VERSE =
@@ -37,6 +39,28 @@ type Campos = {
   nomeSecretario: string;
   versiculo: string;
 };
+
+const BULK_FIELD_KEYS: (keyof Campos)[] = [
+  "nomeCrianca",
+  "sexo",
+  "dataNascimento",
+  "cidadeNascimento",
+  "estadoNascimento",
+  "nomePai",
+  "nomeMae",
+  "bairro",
+  "cidadeResidencia",
+  "estadoResidencia",
+  "cep",
+  "dataApresentacao",
+  "nomePastor",
+  "nomeSecretario",
+  "versiculo",
+];
+
+const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
+const CERTIFICATE_TITLE = "Certificado de Apresentação de Crianças (Menina)";
+const CERTIFICATE_SLUG = "apresentacao-menina";
 
 type CertificateInnerProps = {
   logoSrc: string;
@@ -166,6 +190,10 @@ export function ApresentacaoMeninaCertificateBuilder({ igrejaNome, logoPath, log
     setCampos((prev) => ({ ...prev, [field]: value }));
   };
 
+  const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
+    setCampos((prev) => ({ ...prev, ...row }));
+  }, []);
+
   const handleGenerateAndReset = async () => {
     await handleGeneratePDF();
     setCampos(createInitialCampos());
@@ -181,6 +209,12 @@ export function ApresentacaoMeninaCertificateBuilder({ igrejaNome, logoPath, log
 
   return (
     <section className="certificate-print-root flex flex-col gap-6 print:block">
+      <BulkImportPanel
+        certificateTitle={CERTIFICATE_TITLE}
+        certificateSlug={CERTIFICATE_SLUG}
+        fields={BULK_FIELDS}
+        onApplyRow={handleApplyBulkRow}
+      />
       <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
         <div className="space-y-4">
           <div className="space-y-2">

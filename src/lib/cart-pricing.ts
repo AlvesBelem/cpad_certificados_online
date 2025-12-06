@@ -17,6 +17,7 @@ export type RawCartItem = {
   certificateSlug: string;
   title: string;
   quantity: number;
+  summary?: string | null;
 };
 
 export type PricedCartItem = RawCartItem & {

@@ -5,6 +5,7 @@ type AddItemInput = {
   certificateSlug: string;
   title: string;
   quantity?: number;
+  summary?: string | null;
 };
 
 type UpdateQuantityInput = {
@@ -33,18 +34,13 @@ export function getCartForUser(userId: string) {
 export function addItemToCart(userId: string, input: AddItemInput) {
   const state = getState(userId);
   const quantity = Math.max(1, input.quantity ?? 1);
-  const existing = state.items.find((item) => item.certificateSlug === input.certificateSlug);
-
-  if (existing) {
-    existing.quantity += quantity;
-  } else {
-    state.items.push({
-      id: randomUUID(),
-      certificateSlug: input.certificateSlug,
-      title: input.title,
-      quantity,
-    });
-  }
+  state.items.push({
+    id: randomUUID(),
+    certificateSlug: input.certificateSlug,
+    title: input.title,
+    quantity,
+    summary: input.summary?.trim() || undefined,
+  });
 
   return computeCart(state.items);
 }

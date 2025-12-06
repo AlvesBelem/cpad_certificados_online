@@ -9,6 +9,7 @@ type CartItem = {
   quantity: number;
   unitPriceCents: number;
   totalCents: number;
+  summary?: string | null;
 };
 
 type CartPricing = {
@@ -34,6 +35,7 @@ type AddPayload = {
   certificateSlug: string;
   title: string;
   quantity?: number;
+  summary?: string | null;
 };
 
 async function parseResponse(response: Response) {
