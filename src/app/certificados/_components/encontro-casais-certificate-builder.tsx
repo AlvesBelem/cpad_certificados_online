@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,8 @@ const SIGNATURE_LINE = "__________________";
 
 type BuilderProps = {
   igrejaNome: string;
+  logoPath?: string | null;
+  logoUrl?: string | null;
 };
 
 type Campos = {
@@ -58,9 +60,10 @@ type CertificateInnerProps = {
   igrejaNome: string;
   campos: Campos;
   dataConclusaoFormatada: string;
+  logoSrc: string;
 };
 
-function CertificateInner({ igrejaNome, campos, dataConclusaoFormatada }: CertificateInnerProps) {
+function CertificateInner({ igrejaNome, campos, dataConclusaoFormatada, logoSrc }: CertificateInnerProps) {
   const certificateModel = useCertificateModelContext();
   const showDefaultWatermark = !certificateModel?.backgroundImage;
 
@@ -91,7 +94,7 @@ function CertificateInner({ igrejaNome, campos, dataConclusaoFormatada }: Certif
       <div className="space-y-3 text-center md:text-left">
         <div className="flex justify-center md:justify-start">
           <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-primary/20 bg-background shadow-md">
-            <Image src={DEFAULT_LOGO} alt="Logo da igreja" fill sizes="64px" className="object-cover" priority />
+            <Image src={logoSrc} alt="Logo da igreja" fill sizes="64px" className="object-cover" priority unoptimized />
           </div>
         </div>
         <div className="space-y-1">
@@ -136,7 +139,7 @@ function CertificateInner({ igrejaNome, campos, dataConclusaoFormatada }: Certif
   );
 }
 
-export function EncontroCasaisCertificateBuilder({ igrejaNome }: BuilderProps) {
+export function EncontroCasaisCertificateBuilder({ igrejaNome, logoPath, logoUrl }: BuilderProps) {
   const createInitialCampos = () => ({
     nomeEsposo: "",
     nomeEsposa: "",
@@ -188,6 +191,8 @@ export function EncontroCasaisCertificateBuilder({ igrejaNome }: BuilderProps) {
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
     setCampos((prev) => ({ ...prev, ...row }));
   }, []);
+
+  const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
   return (
     <section className="certificate-print-root flex flex-col gap-6 print:block">
@@ -260,7 +265,12 @@ export function EncontroCasaisCertificateBuilder({ igrejaNome }: BuilderProps) {
       </div>
 
       <CertificatePreview certificateRef={certificateRef} frameColor="#f7e9c5">
-        <CertificateInner igrejaNome={igrejaNome} campos={campos} dataConclusaoFormatada={dataConclusaoFormatada} />
+        <CertificateInner
+          igrejaNome={igrejaNome}
+          campos={campos}
+          dataConclusaoFormatada={dataConclusaoFormatada}
+          logoSrc={logoSrc}
+        />
       </CertificatePreview>
     </section>
   );

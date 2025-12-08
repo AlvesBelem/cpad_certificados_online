@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -20,6 +20,8 @@ const SIGNATURE_LINE = "_____________________________";
 
 type BuilderProps = {
   igrejaNome: string;
+  logoPath?: string | null;
+  logoUrl?: string | null;
 };
 
 type Campos = {
@@ -53,9 +55,10 @@ type CertificateInnerProps = {
   igrejaNome: string;
   campos: Campos;
   dataFormatada: string;
+  logoSrc: string;
 };
 
-function CertificateInner({ igrejaNome, campos, dataFormatada }: CertificateInnerProps) {
+function CertificateInner({ igrejaNome, campos, dataFormatada, logoSrc }: CertificateInnerProps) {
   const nomeTexto = campos.nomeMembro || "Nome do dizimista";
   const cidadeTexto = campos.cidade || "_____________";
   const versiculoTexto = campos.versiculo || DEFAULT_VERSE;
@@ -67,7 +70,7 @@ function CertificateInner({ igrejaNome, campos, dataFormatada }: CertificateInne
       <div className="space-y-3 text-center md:text-left">
         <div className="flex justify-center md:justify-start">
           <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-primary/20 bg-background shadow-md">
-            <Image src={DEFAULT_LOGO} alt="Logo da igreja" fill sizes="64px" className="object-cover" priority />
+            <Image src={logoSrc} alt="Logo da igreja" fill sizes="64px" className="object-cover" priority unoptimized />
           </div>
         </div>
         <div className="space-y-1">
@@ -106,7 +109,7 @@ function CertificateInner({ igrejaNome, campos, dataFormatada }: CertificateInne
   );
 }
 
-export function DizimistaFielCertificateBuilder({ igrejaNome }: BuilderProps) {
+export function DizimistaFielCertificateBuilder({ igrejaNome, logoPath, logoUrl }: BuilderProps) {
   const createInitialCampos = () => ({
     nomeMembro: "",
     cidade: "",
@@ -154,6 +157,8 @@ export function DizimistaFielCertificateBuilder({ igrejaNome }: BuilderProps) {
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
     setCampos((prev) => ({ ...prev, ...row }));
   }, []);
+
+  const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
   return (
     <section className="certificate-print-root flex flex-col gap-6 print:block">
@@ -214,7 +219,7 @@ export function DizimistaFielCertificateBuilder({ igrejaNome }: BuilderProps) {
       </div>
 
       <CertificatePreview certificateRef={certificateRef} frameColor="#f7e9c5">
-        <CertificateInner igrejaNome={igrejaNome} campos={campos} dataFormatada={dataFormatada} />
+        <CertificateInner igrejaNome={igrejaNome} campos={campos} dataFormatada={dataFormatada} logoSrc={logoSrc} />
       </CertificatePreview>
     </section>
   );

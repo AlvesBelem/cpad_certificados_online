@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,11 +12,14 @@ import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
+const DEFAULT_LOGO = "/igreja.png";
 const DEFAULT_VERSE = "\"Oh! quão bom e quão suave é que os irmãos vivam em união.\" Salmos 133:1";
 const SIGNATURE_LINE = "_____________________________";
 
 type BuilderProps = {
   igrejaNome: string;
+  logoPath?: string | null;
+  logoUrl?: string | null;
 };
 
 type Campos = {
@@ -50,9 +54,10 @@ const REQUIRED_FIELDS: (keyof Campos)[] = [
 type CertificateInnerProps = {
   igrejaNome: string;
   campos: Campos;
+  logoSrc: string;
 };
 
-function CertificateInner({ igrejaNome, campos }: CertificateInnerProps) {
+function CertificateInner({ igrejaNome, campos, logoSrc }: CertificateInnerProps) {
   const nomeTexto = campos.nomeParticipante || "Nome do participante";
   const anoTexto = campos.ano || "____";
   const versiculoTexto = campos.versiculo || DEFAULT_VERSE;
@@ -65,10 +70,17 @@ function CertificateInner({ igrejaNome, campos }: CertificateInnerProps) {
 
   return (
     <div className="flex h-full flex-col rounded-[32px] bg-white p-6 text-[#6b4b1f] md:p-5">
-      <div className="space-y-1 text-center md:text-left">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.6em] text-primary/70">Certificado</p>
-        <h2 className="text-3xl font-serif text-primary md:text-4xl">Participação em Célula</h2>
-        <p className="text-xs uppercase tracking-[0.4em] text-primary/60">{igrejaNome}</p>
+      <div className="space-y-3 text-center md:text-left">
+        <div className="flex justify-center md:justify-start">
+          <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-primary/20 bg-background shadow-md">
+            <Image src={logoSrc} alt="Logo da igreja" fill sizes="64px" className="object-cover" priority unoptimized />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.6em] text-primary/70">Certificado</p>
+          <h2 className="text-3xl font-serif text-primary md:text-4xl">Participação em Célula</h2>
+          <p className="text-xs uppercase tracking-[0.4em] text-primary/60">{igrejaNome}</p>
+        </div>
       </div>
 
       <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
@@ -104,7 +116,7 @@ function CertificateInner({ igrejaNome, campos }: CertificateInnerProps) {
   );
 }
 
-export function ParticipacaoCelulaCertificateBuilder({ igrejaNome }: BuilderProps) {
+export function ParticipacaoCelulaCertificateBuilder({ igrejaNome, logoPath, logoUrl }: BuilderProps) {
   const createInitialCampos = () => ({
     nomeParticipante: "",
     ano: "",
@@ -151,6 +163,8 @@ export function ParticipacaoCelulaCertificateBuilder({ igrejaNome }: BuilderProp
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
     setCampos((prev) => ({ ...prev, ...row }));
   }, []);
+
+  const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
   return (
     <section className="certificate-print-root flex flex-col gap-6 print:block">
@@ -222,7 +236,7 @@ export function ParticipacaoCelulaCertificateBuilder({ igrejaNome }: BuilderProp
       </div>
 
       <CertificatePreview certificateRef={certificateRef} frameColor="#f6e3b4">
-        <CertificateInner igrejaNome={igrejaNome} campos={campos} />
+        <CertificateInner igrejaNome={igrejaNome} campos={campos} logoSrc={logoSrc} />
       </CertificatePreview>
     </section>
   );
