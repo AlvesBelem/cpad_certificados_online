@@ -3,6 +3,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
 import { AppShell } from "@/components/layout/app-shell";
+
+export const runtime = "nodejs";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,7 +21,7 @@ const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
 export const metadata: Metadata = {
   title: "AdiGreja Certificados",
-  description: "Site público focado na geração de certificados prontos para igrejas.",
+  description: "Site publico focado na geracao de certificados prontos para igrejas.",
   metadataBase: new URL(appUrl),
 };
 

@@ -1,17 +1,142 @@
 "use client";
 
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2, LogIn, ShoppingCart, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+import jsPDF from "jspdf";
+import JSZip from "jszip";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth-client";
+import { canFinalizeOffline } from "@/lib/roles";
 import { useCartContext } from "./cart-provider";
 import { useCartSheet } from "./cart-sheet-context";
 import { cn } from "@/lib/utils";
 
+type CartEntry = {
+  id: string;
+  quantity: number;
+  summary?: string | null;
+  previewImage?: string | null;
+};
+
+type MinimalCartItem = {
+  id: string;
+  certificateSlug: string;
+  title: string;
+  quantity: number;
+  summary?: string | null;
+  previewImage?: string | null;
+  entries?: CartEntry[];
+};
+
+type DownloadUnit = {
+  slug: string;
+  title: string;
+  summary?: string | null;
+  previewImage?: string | null;
+  sequence: number;
+};
+
+const offlinePaymentMethods = [
+  { value: "dinheiro", label: "Dinheiro" },
+  { value: "cartao", label: "Cartão" },
+  { value: "pix", label: "Pix" },
+  { value: "transferencia", label: "Transferência" },
+  { value: "outro", label: "Outro" },
+];
+
+async function downloadCertificates(items: MinimalCartItem[]) {
+  if (!items.length) return;
+
+  const units: DownloadUnit[] = [];
+  items.forEach((item) => {
+    const entryList =
+      item.entries && item.entries.length
+        ? item.entries
+        : [
+            {
+              id: `${item.id}-default`,
+              quantity: item.quantity,
+              summary: item.summary,
+              previewImage: item.previewImage,
+            },
+          ];
+
+    entryList.forEach((entry) => {
+      const copies = Math.max(1, entry.quantity || 1);
+      for (let copyIndex = 0; copyIndex < copies; copyIndex++) {
+        units.push({
+          slug: item.certificateSlug,
+          title: item.title,
+          summary: entry.summary ?? item.summary,
+          previewImage: entry.previewImage ?? item.previewImage,
+          sequence: units.length + 1,
+        });
+      }
+    });
+  });
+
+  const files: { filename: string; data: ArrayBuffer }[] = [];
+  for (const unit of units) {
+    if (!unit.previewImage) {
+      continue;
+    }
+    const pdf = new jsPDF("landscape", "mm", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    pdf.addImage(unit.previewImage, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
+    const data = pdf.output("arraybuffer");
+    const filename = `certificado-${unit.slug || unit.sequence}-${unit.sequence}.pdf`;
+    files.push({ filename, data });
+  }
+
+  if (!files.length) {
+    toast.error("Nao foi possivel gerar os PDF(s). Refaça o pedido.");
+    return;
+  }
+
+  if (files.length === 1) {
+    const [file] = files;
+    const blob = new Blob([file.data], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    return;
+  }
+
+  const zip = new JSZip();
+  for (const file of files) {
+    zip.file(file.filename, file.data);
+  }
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "certificados.zip";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 export function CartSheet() {
   const { isOpen, closeCart } = useCartSheet();
   const { formatted, loading, mutating, error, updateQuantity, clear } = useCartContext();
+  const router = useRouter();
+  const [checkingOut, setCheckingOut] = useState(false);
+  const { data: session } = authClient.useSession();
+  const sessionUser = session?.user as { role?: string } | undefined;
+  const canFinishOffline = canFinalizeOffline(sessionUser?.role);
+  const [paymentMethod, setPaymentMethod] = useState<string>(offlinePaymentMethods[0]?.value ?? "dinheiro");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -34,8 +159,8 @@ export function CartSheet() {
   }, [isOpen]);
 
   const items = formatted?.items ?? [];
-  const totalLabel = formatted?.pricing.total ?? "R$ 0,00";
-  const unitLabel = formatted?.pricing.unitPrice ?? "R$ 0,00";
+  const totalLabel = formatted?.pricing.total ?? "R$ 0,00";
+  const unitLabel = formatted?.pricing.unitPrice ?? "R$ 0,00";
   const totalQuantity = formatted?.pricing.totalQuantity ?? 0;
   const showLoginCta = Boolean(error && error.toLowerCase().includes("sessao"));
 
@@ -57,6 +182,55 @@ export function CartSheet() {
       await clear();
     } catch {
       // erros tratados externamente
+    }
+  };
+
+  const handleCheckout = async () => {
+    if (!formatted || items.length === 0 || checkingOut) return;
+    if (!canFinishOffline) {
+      toast.info(
+        "O checkout online estará disponível em breve. Somente administradores e funcionários podem finalizar pagamentos presenciais durante os testes.",
+      );
+      return;
+    }
+    setCheckingOut(true);
+    const params = new URLSearchParams();
+    if (formatted.pricing.total) {
+      params.set("total", formatted.pricing.total);
+    }
+    if (formatted.pricing.totalQuantity) {
+      params.set("quantity", String(formatted.pricing.totalQuantity));
+    }
+    if (formatted.pricing.unitPrice) {
+      params.set("unit", formatted.pricing.unitPrice);
+    }
+    if (paymentMethod) {
+      params.set("method", paymentMethod);
+    }
+    try {
+      const downloadPayload: MinimalCartItem[] = items.map((item) => ({
+        id: item.id,
+        certificateSlug: item.certificateSlug,
+        title: item.title,
+        quantity: item.quantity,
+        summary: item.summary,
+        previewImage: item.previewImage,
+        entries: item.entries?.map((entry) => ({
+          id: entry.id,
+          quantity: entry.quantity,
+          summary: entry.summary,
+          previewImage: entry.previewImage ?? item.previewImage,
+        })),
+      }));
+      await downloadCertificates(downloadPayload);
+      await clear();
+      closeCart();
+      const query = params.toString();
+      router.push(query ? `/obrigado?${query}` : "/obrigado");
+    } catch {
+      toast.error("Nao foi possivel finalizar o pedido. Tente novamente.");
+    } finally {
+      setCheckingOut(false);
     }
   };
 
@@ -131,9 +305,26 @@ export function CartSheet() {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                      {item.summary ? (
-                        <p className="text-xs text-muted-foreground">Para: {item.summary}</p>
-                      ) : null}
+                      {(() => {
+                        const entryCount = item.entries?.length ?? 0;
+                        if (entryCount === 1) {
+                          const summary = item.entries?.[0]?.summary;
+                          return summary ? (
+                            <p className="text-xs text-muted-foreground">Para: {summary}</p>
+                          ) : null;
+                        }
+                        if (entryCount > 1) {
+                          return (
+                            <p className="text-xs text-muted-foreground">
+                              {entryCount} certificados diferentes
+                            </p>
+                          );
+                        }
+                        if (item.summary) {
+                          return <p className="text-xs text-muted-foreground">Para: {item.summary}</p>;
+                        }
+                        return null;
+                      })()}
                       <p className="mt-1 text-xs text-muted-foreground">Quantidade: {item.quantity}</p>
                     </div>
                     <div className="text-sm font-semibold text-foreground">
@@ -174,8 +365,36 @@ export function CartSheet() {
               <span>{totalLabel}</span>
             </div>
           </div>
-          <Button type="button" className="mt-4 w-full" disabled={items.length === 0 || mutating} onClick={closeCart}>
-            Finalizar pedido
+          {canFinishOffline ? (
+            <div className="mt-4 space-y-2">
+              <Label htmlFor="paymentMethod" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                Forma de pagamento presencial
+              </Label>
+              <select
+                id="paymentMethod"
+                value={paymentMethod}
+                onChange={(event) => setPaymentMethod(event.target.value)}
+                className="w-full rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              >
+                {offlinePaymentMethods.map((method) => (
+                  <option key={method.value} value={method.value}>
+                    {method.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ) : (
+            <p className="mt-4 text-xs text-muted-foreground">
+              Checkout online em desenvolvimento. Apenas administradores e funcionários conseguem finalizar pagamentos neste ambiente de teste.
+            </p>
+          )}
+          <Button
+            type="button"
+            className="mt-3 w-full"
+            disabled={items.length === 0 || mutating || checkingOut}
+            onClick={handleCheckout}
+          >
+            {checkingOut ? "Processando..." : canFinishOffline ? "Finalizar pedido" : "Ir para checkout"}
           </Button>
         </footer>
       </aside>

@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 
+type CartCertificateEntry = {
+  id: string;
+  quantity: number;
+  summary?: string | null;
+  previewImage?: string | null;
+};
+
 type CartItem = {
   id: string;
   certificateSlug: string;
@@ -10,6 +17,8 @@ type CartItem = {
   unitPriceCents: number;
   totalCents: number;
   summary?: string | null;
+  previewImage?: string | null;
+  entries?: CartCertificateEntry[];
 };
 
 type CartPricing = {
@@ -36,6 +45,7 @@ type AddPayload = {
   title: string;
   quantity?: number;
   summary?: string | null;
+  previewImage?: string | null;
 };
 
 async function parseResponse(response: Response) {

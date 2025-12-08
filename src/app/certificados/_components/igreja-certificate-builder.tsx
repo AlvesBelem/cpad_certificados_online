@@ -10,10 +10,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
 import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { useCartContext } from "@/components/cart/cart-provider";
-import { useCartSheet } from "@/components/cart/cart-sheet-context";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
+import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
 const DEFAULT_LOGO = "/igreja.png";
 const DEFAULT_VERSE = "\"Portanto ide, fazei discípulos de todas as nações, batizando-os em nome do Pai, e do Filho, e do Espírito Santo.\" Mateus 28:19";
@@ -50,6 +51,11 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 ];
 
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeBatizando",
+  "dataBatismo",
+  "nomePastor"
+];
 
 type CertificateInnerProps = {
   logoSrc: string;
@@ -59,18 +65,23 @@ type CertificateInnerProps = {
 };
 
 function CertificateInner({ logoSrc, igrejaNome, campos, dataFormatada }: CertificateInnerProps) {
+  const certificateModel = useCertificateModelContext();
+  const showDefaultWatermark = !certificateModel?.backgroundImage;
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden text-center md:p-2">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <Image
-          src="/batismo.png"
-          alt="Marca d'água de batismo"
-          width={650}
-          height={1024}
-          className="max-h-[90%] max-w-[90%] opacity-30 -translate-y-6"
-          priority
-        />
-      </div>
+      {showDefaultWatermark ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <Image
+            src="/batismo.png"
+            alt="Marca d'água de batismo"
+            width={650}
+            height={1024}
+            className="max-h-[90%] max-w-[90%] opacity-30 -translate-y-6"
+            priority
+          />
+        </div>
+      ) : null}
       {/* Church identity */}
       <div className="certificate-header flex flex-col items-start gap-6 text-left md:flex-row md:items-center md:gap-10">
         <div className="flex items-center justify-start">
@@ -156,10 +167,6 @@ export function IgrejaCertificateBuilder({
   const [campos, setCampos] = useState<Campos>(() => createInitialCampos());
 
   const pathname = usePathname();
-  const currencyFormatter = useMemo(
-    () => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }),
-    [],
-  );
   const resolvedSlug = useMemo(() => {
     if (certificateSlug) return certificateSlug;
     const parts = pathname?.split("/").filter(Boolean);
@@ -173,23 +180,28 @@ export function IgrejaCertificateBuilder({
     return label ? `Certificado ${label}` : "Certificado";
   }, [certificateTitle, resolvedSlug]);
 
-  const { addItem, formatted, mutating: isAddingToCart, error: cartError } = useCartContext();
-  const { openCart } = useCartSheet();
-  const isReady = useMemo(() => {
-    const requiredFields: (keyof Campos)[] = [
-      "nomeBatizando",
-      "dataBatismo",
-      "localBatismo",
-      "cidade",
-      "estado",
-      "nomePastor",
-      "nomeSecretario",
-    ];
-    return requiredFields.every((field) => {
-      const value = campos[field];
-      return typeof value === "string" && value.trim().length > 0;
-    });
-  }, [campos]);
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
+    fileName: `certificado-batismo-${campos.nomeBatizando || "membro"}.pdf`,
+    title: "Certificado de Batismo",
+    text: `Certificado para ${campos.nomeBatizando || "membro"}`,
+  });
+
+  const { formatted, error: cartError } = useCartContext();
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: resolvedSlug,
+    title: resolvedTitle,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: campos.nomeBatizando,
+    getPreviewImage: capturePreviewImage,
+  });
 
   useEffect(() => {
     if (cartError) {
@@ -198,12 +210,6 @@ export function IgrejaCertificateBuilder({
   }, [cartError]);
 
   const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
-
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
-    fileName: `certificado-batismo-${campos.nomeBatizando || "membro"}.pdf`,
-    title: "Certificado de Batismo",
-    text: `Certificado para ${campos.nomeBatizando || "membro"}`,
-  });
 
   const handleChange = (field: keyof Campos) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -216,35 +222,7 @@ export function IgrejaCertificateBuilder({
       return;
     }
     await handleGeneratePDF();
-    setCampos(createInitialCampos());
   };
-
-  const handleAddToCart = useCallback(async () => {
-    if (!isReady) {
-      toast.error("Preencha o certificado antes de adicionar ao carrinho.");
-      return;
-    }
-    try {
-      const updated = await addItem({
-        certificateSlug: resolvedSlug,
-        title: resolvedTitle,
-        quantity: 1,
-        summary: campos.nomeBatizando?.trim() || undefined,
-      });
-      toast.success("Certificado adicionado ao carrinho");
-      openCart();
-      if (updated.pricing.upsell) {
-        const nextUnit = currencyFormatter.format(updated.pricing.nextUnitPriceCents! / 100);
-        const nextTotal = currencyFormatter.format(updated.pricing.upsell.newTotalCents / 100);
-        toast.message("Falta 1 para reduzir o valor unitario", {
-          description: `Adicionando mais 1, cada certificado sai por ${nextUnit} (total ${nextTotal}).`,
-        });
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Falha ao adicionar ao carrinho.";
-      toast.error(message);
-    }
-  }, [addItem, campos.nomeBatizando, currencyFormatter, isReady, openCart, resolvedSlug, resolvedTitle]);
 
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
     setCampos((prev) => ({ ...prev, ...row }));
@@ -316,7 +294,6 @@ export function IgrejaCertificateBuilder({
           onAddToCart={handleAddToCart}
           isAddingToCart={isAddingToCart}
           canSubmit={isReady}
-          validationMessage="Preencha todos os campos antes de gerar o PDF ou adicionar ao carrinho."
           showGenerate={false}
         />
         {formatted?.pricing && (

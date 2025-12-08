@@ -1,11 +1,15 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import type { PropsWithChildren } from "react";
+
+type OpenCartOptions = {
+  autoCloseMs?: number;
+};
 
 type CartSheetContextValue = {
   isOpen: boolean;
-  openCart: () => void;
+  openCart: (options?: OpenCartOptions) => void;
   closeCart: () => void;
   toggleCart: () => void;
   setOpen: (state: boolean) => void;
@@ -15,10 +19,60 @@ const CartSheetContext = createContext<CartSheetContextValue | null>(null);
 
 export function CartSheetProvider({ children }: PropsWithChildren) {
   const [isOpen, setIsOpen] = useState(false);
+  const autoCloseRef = useRef<NodeJS.Timeout | null>(null);
 
-  const openCart = useCallback(() => setIsOpen(true), []);
-  const closeCart = useCallback(() => setIsOpen(false), []);
-  const toggleCart = useCallback(() => setIsOpen((prev) => !prev), []);
+  const clearAutoClose = useCallback(() => {
+    if (autoCloseRef.current) {
+      clearTimeout(autoCloseRef.current);
+      autoCloseRef.current = null;
+    }
+  }, []);
+
+  const scheduleAutoClose = useCallback(
+    (ms?: number) => {
+      if (!ms) return;
+      clearAutoClose();
+      autoCloseRef.current = setTimeout(() => {
+        setIsOpen(false);
+        autoCloseRef.current = null;
+      }, ms);
+    },
+    [clearAutoClose],
+  );
+
+  const openCart = useCallback(
+    (options?: OpenCartOptions) => {
+      setIsOpen(true);
+      scheduleAutoClose(options?.autoCloseMs);
+    },
+    [scheduleAutoClose],
+  );
+
+  const closeCart = useCallback(() => {
+    clearAutoClose();
+    setIsOpen(false);
+  }, [clearAutoClose]);
+
+  const toggleCart = useCallback(() => {
+    setIsOpen((prev) => {
+      const next = !prev;
+      if (!next) {
+        clearAutoClose();
+      }
+      return next;
+    });
+  }, [clearAutoClose]);
+
+  const setOpen = useCallback(
+    (state: boolean) => {
+      if (state) {
+        openCart();
+      } else {
+        closeCart();
+      }
+    },
+    [openCart, closeCart],
+  );
 
   const value = useMemo(
     () => ({
@@ -26,9 +80,9 @@ export function CartSheetProvider({ children }: PropsWithChildren) {
       openCart,
       closeCart,
       toggleCart,
-      setOpen: setIsOpen,
+      setOpen,
     }),
-    [isOpen, openCart, closeCart, toggleCart],
+    [isOpen, openCart, closeCart, toggleCart, setOpen],
   );
 
   return <CartSheetContext.Provider value={value}>{children}</CartSheetContext.Provider>;

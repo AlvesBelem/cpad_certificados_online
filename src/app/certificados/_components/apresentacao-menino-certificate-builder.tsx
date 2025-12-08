@@ -2,7 +2,6 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +9,9 @@ import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
+import { CertificateForm } from "./CertificateForm";
+import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
 const DEFAULT_LOGO = "/igreja.png";
 const DEFAULT_VERSE =
@@ -61,6 +63,12 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 const CERTIFICATE_TITLE = "Certificado de Apresentação de Crianças (Menino)";
 const CERTIFICATE_SLUG = "apresentacao-menino";
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeCrianca",
+  "dataApresentacao",
+  "nomePai",
+  "nomeMae"
+];
 
 type CertificateInnerProps = {
   logoSrc: string;
@@ -77,18 +85,23 @@ function CertificateInner({
   dataNascimentoFormatada,
   dataApresentacaoFormatada,
 }: CertificateInnerProps) {
+  const certificateModel = useCertificateModelContext();
+  const showDefaultWatermark = !certificateModel?.backgroundImage;
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden text-center md:p-2">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <Image
-          src="/menino.png"
-          alt="Marca d'água de menino"
-          width={600}
-          height={1024}
-          className="max-h-[90%] max-w-[90%] opacity-30 -translate-y-6"
-          priority
-        />
-      </div>
+      {showDefaultWatermark ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <Image
+            src="/menino.png"
+            alt="Marca d'água de menino"
+            width={600}
+            height={1024}
+            className="max-h-[90%] max-w-[90%] opacity-30 -translate-y-6"
+            priority
+          />
+        </div>
+      ) : null}
       <div className="certificate-header flex flex-col items-start gap-6 text-left md:flex-row md:items-center md:gap-10">
         <div className="flex items-center justify-start">
           <div className="relative h-24 w-24 overflow-hidden rounded-3xl border-2 border-primary/30 bg-background shadow-lg">
@@ -179,10 +192,26 @@ export function ApresentacaoMeninoCertificateBuilder({ igrejaNome, logoPath, log
 
   const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
     fileName: `apresentacao-${campos.nomeCrianca || "crianca"}.pdf`,
     title: "Apresentação de Crianças",
     text: `Certificado para ${campos.nomeCrianca || "criança"}`,
+  });
+
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: CERTIFICATE_SLUG,
+    title: CERTIFICATE_TITLE,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: campos.nomeCrianca,
+    getPreviewImage: capturePreviewImage,
   });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -193,11 +222,6 @@ export function ApresentacaoMeninoCertificateBuilder({ igrejaNome, logoPath, log
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
     setCampos((prev) => ({ ...prev, ...row }));
   }, []);
-
-  const handleGenerateAndReset = async () => {
-    await handleGeneratePDF();
-    setCampos(createInitialCampos());
-  };
 
   const dataNascimentoFormatada = campos.dataNascimento
     ? new Date(campos.dataNascimento).toLocaleDateString("pt-BR")
@@ -288,30 +312,16 @@ export function ApresentacaoMeninoCertificateBuilder({ igrejaNome, logoPath, log
             <Textarea id="versiculo" value={campos.versiculo} onChange={handleChange("versiculo")} rows={3} />
           </div>
         </div>
-        <div className="hidden gap-2 pt-2 md:flex">
-          <Button
-            type="button"
-            size="sm"
-            className="flex-1 bg-emerald-700 text-white hover:bg-emerald-800"
-            onClick={handleGenerateAndReset}
-            disabled={isGenerating}
-          >
-            {isGenerating ? "Gerando PDF..." : "Gerar PDF"}
-          </Button>
-        </div>
-        <div className="flex gap-2 pt-2 md:hidden">
-          {isShareSupported ? (
-            <Button
-              type="button"
-              variant={isGenerating ? "outline" : "default"}
-              className="flex-1"
-              onClick={handleShare}
-              disabled={isGenerating}
-            >
-              {isGenerating ? "Gerando PDF..." : "Compartilhar PDF"}
-            </Button>
-          ) : null}
-        </div>
+        <CertificateForm
+          isShareSupported={isShareSupported}
+          isGenerating={isGenerating}
+          handleShare={handleShare}
+          handleGeneratePDF={handleGeneratePDF}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          canSubmit={isReady}
+          showGenerate={false}
+        />
       </div>
 
       <CertificatePreview

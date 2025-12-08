@@ -10,6 +10,7 @@ import { CertificatePreview } from "@/components/certificates/CertificatePreview
 import { CertificateForm } from "./CertificateForm";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
 const DEFAULT_LOGO = "/igreja.png";
 const DEFAULT_VERSE =
@@ -53,6 +54,11 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 const CERTIFICATE_TITLE = "Certificado de Ordenação Obreiro";
 const CERTIFICATE_SLUG = "ordenacao-obreiro";
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeOrdenando",
+  "dataOrdenacao",
+  "pastorOrdenante"
+];
 
 type CertificateInnerProps = {
   logoSrc: string;
@@ -161,10 +167,26 @@ export function OrdenacaoObreiroCertificateBuilder({ igrejaNome, logoPath, logoU
 
   const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
     fileName: `certificado-ordenacao-obreiro-${campos.nomeOrdenando || "ordenacao"}.pdf`,
     title: "Certificado de Ordenação Obreiro",
     text: `Certificado de ordenação a obreiro para ${campos.nomeOrdenando || "membro"}`,
+  });
+
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: CERTIFICATE_SLUG,
+    title: CERTIFICATE_TITLE,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: campos.nomeOrdenando,
+    getPreviewImage: capturePreviewImage,
   });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -182,7 +204,6 @@ export function OrdenacaoObreiroCertificateBuilder({ igrejaNome, logoPath, logoU
 
   const handleGenerateAndReset = async () => {
     await handleGeneratePDF();
-    setCampos(createInitialCampos());
   };
 
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
@@ -268,6 +289,10 @@ export function OrdenacaoObreiroCertificateBuilder({ igrejaNome, logoPath, logoU
           isGenerating={isGenerating}
           handleShare={handleShare}
           handleGeneratePDF={handleGenerateAndReset}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          canSubmit={isReady}
+          showGenerate={false}
         />
       </div>
 

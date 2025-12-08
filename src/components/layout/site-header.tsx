@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogOut, ShoppingCart } from "lucide-react";
@@ -9,9 +9,10 @@ import { Button } from "@/components/ui/button";
 import { useCartContext } from "@/components/cart/cart-provider";
 import { useCartSheet } from "@/components/cart/cart-sheet-context";
 import { cn } from "@/lib/utils";
+import { normalizeRole, UserRole } from "@/lib/roles";
 import { authClient } from "@/lib/auth-client";
 
-const navLinks = [{ href: "/certificados", label: "Modelos" }];
+const baseNavLinks = [{ href: "/certificados", label: "Modelos" }];
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -64,15 +65,25 @@ export function SiteHeader() {
     try {
       setSigningOut(true);
       await authClient.signOut();
-      toast.success("Você saiu da conta.");
+      toast.success("Voce saiu da conta.");
     } catch (error) {
       console.error("Erro ao sair:", error);
-      toast.error("Não foi possível sair. Tente novamente.");
+      toast.error("Nao foi possivel sair. Tente novamente.");
     } finally {
       setSigningOut(false);
       setShowUserMenu(false);
     }
   };
+
+  const userRole = (user as { role?: string } | undefined)?.role;
+
+  const links = useMemo(() => {
+    const items = [...baseNavLinks];
+    if (normalizeRole(userRole) === UserRole.ADMIN) {
+      items.push({ href: "/admin", label: "Admin" });
+    }
+    return items;
+  }, [userRole]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">
@@ -81,7 +92,7 @@ export function SiteHeader() {
           AdiGreja Certificados
         </Link>
         <nav className="hidden items-center gap-6 text-sm font-medium text-muted-foreground md:flex">
-          {navLinks.map((item) => (
+          {links.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -100,7 +111,7 @@ export function SiteHeader() {
             variant="ghost"
             size="icon"
             className="relative"
-            onClick={openCart}
+            onClick={() => openCart()}
             aria-label="Abrir carrinho"
           >
             <ShoppingCart className="h-5 w-5" />
@@ -111,7 +122,7 @@ export function SiteHeader() {
             ) : null}
           </Button>
           {user ? (
-            <div className="relative hidden sm:block" ref={userMenuRef}>
+            <div className="relative" ref={userMenuRef}>
               <button
                 type="button"
                 className={cn(
@@ -132,7 +143,7 @@ export function SiteHeader() {
               </button>
               {showUserMenu ? (
                 <div className="absolute right-0 mt-2 w-60 rounded-2xl border border-border/70 bg-background/95 p-4 text-sm shadow-lg">
-                  <p className="text-xs uppercase tracking-[0.3em] text-primary/70">Conta</p>
+                  <p className="text-xs uppercase tracking-[0.3em] text-primary/70">Perfil</p>
                   <p className="mt-1 text-sm font-semibold text-foreground">{displayName}</p>
                   {user.email ? <p className="text-xs text-muted-foreground">{user.email}</p> : null}
                   <Button
@@ -150,7 +161,7 @@ export function SiteHeader() {
               ) : null}
             </div>
           ) : (
-            <Button asChild className="hidden sm:inline-flex">
+            <Button asChild size="sm">
               <Link href="/login">Entrar</Link>
             </Button>
           )}

@@ -1,12 +1,21 @@
-import { useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
+import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { PDF_LOCK_MESSAGE } from "@/constants/pdf-lock";
 
 type UseCertificatePDFOptions = {
   fileName: string;
   title?: string;
   text?: string;
 };
+
+const PDF_LOCK_ENABLED = true;
+const PAGE_WIDTH_MM = 297;
+const PAGE_HEIGHT_MM = 210;
+const PREVIEW_SCALE = 0.9;
+const PADDING_X_MM = ((1 - PREVIEW_SCALE) * PAGE_WIDTH_MM) / 2;
+const PADDING_Y_MM = ((1 - PREVIEW_SCALE) * PAGE_HEIGHT_MM) / 2;
 
 export function useCertificatePDF(options: UseCertificatePDFOptions) {
   const certificateRef = useRef<HTMLDivElement>(null);
@@ -16,7 +25,7 @@ export function useCertificatePDF(options: UseCertificatePDFOptions) {
 
   const waitForNextFrame = () => new Promise((resolve) => requestAnimationFrame(() => resolve(null)));
 
-  const buildPdf = async () => {
+  const captureCanvas = useCallback(async () => {
     if (!certificateRef.current) return null;
 
     const element = certificateRef.current;
@@ -25,37 +34,49 @@ export function useCertificatePDF(options: UseCertificatePDFOptions) {
     clone.style.position = "absolute";
     clone.style.left = "-9999px";
     clone.style.top = "0";
-    clone.style.width = "297mm";
-    clone.style.maxWidth = "297mm";
-    clone.style.height = "210mm";
-    clone.style.maxHeight = "210mm";
+    clone.style.width = `${PAGE_WIDTH_MM}mm`;
+    clone.style.maxWidth = `${PAGE_WIDTH_MM}mm`;
+    clone.style.height = `${PAGE_HEIGHT_MM}mm`;
+    clone.style.maxHeight = `${PAGE_HEIGHT_MM}mm`;
     clone.style.opacity = "1";
-    clone.style.paddingTop = "0";
-    clone.style.paddingBottom = "0";
+    clone.style.paddingTop = `${PADDING_Y_MM}mm`;
+    clone.style.paddingBottom = `${PADDING_Y_MM}mm`;
+    clone.style.paddingLeft = `${PADDING_X_MM}mm`;
+    clone.style.paddingRight = `${PADDING_X_MM}mm`;
     clone.style.transform = "none";
     clone.style.marginTop = "0";
     clone.style.marginBottom = "0";
     clone.style.display = "flex";
     clone.style.alignItems = "center";
     clone.style.justifyContent = "center";
+    clone.style.boxSizing = "border-box";
+    clone.style.backgroundColor = "#ffffff";
+    clone.querySelectorAll<HTMLElement>("[data-watermark='true']").forEach((node) => node.remove());
     clone.querySelectorAll<HTMLElement>(".certificate-content").forEach((node) => {
       node.style.display = "block";
-      node.style.marginTop = "30mm";
-      node.style.marginBottom = "0";
+      node.style.margin = "0 auto";
+      node.style.maxWidth = "100%";
+      node.style.height = "100%";
     });
     document.body.appendChild(clone);
 
     await waitForNextFrame();
 
-    const canvas = await html2canvas(clone, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      backgroundColor: "#ffffff",
-    });
+    try {
+      const canvas = await html2canvas(clone, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+      return canvas;
+    } finally {
+      clone.remove();
+    }
+  }, []);
 
-    clone.remove();
-
+  const buildPdf = async () => {
+    const canvas = await captureCanvas();
     if (!canvas) return null;
 
     const pdf = new jsPDF("landscape", "mm", "a4");
@@ -83,7 +104,17 @@ export function useCertificatePDF(options: UseCertificatePDFOptions) {
     return pdf;
   };
 
+  const capturePreviewImage = useCallback(async () => {
+    const canvas = await captureCanvas();
+    if (!canvas) return null;
+    return canvas.toDataURL("image/png");
+  }, [captureCanvas]);
+
   const handleShare = async () => {
+    if (PDF_LOCK_ENABLED) {
+      toast.info(PDF_LOCK_MESSAGE);
+      return;
+    }
     setIsGenerating(true);
     try {
       const pdf = await buildPdf();
@@ -112,6 +143,10 @@ export function useCertificatePDF(options: UseCertificatePDFOptions) {
   };
 
   const handleGeneratePDF = async () => {
+    if (PDF_LOCK_ENABLED) {
+      toast.info(PDF_LOCK_MESSAGE);
+      return;
+    }
     setIsGenerating(true);
     try {
       const pdf = await buildPdf();
@@ -130,5 +165,6 @@ export function useCertificatePDF(options: UseCertificatePDFOptions) {
     isShareSupported,
     handleShare,
     handleGeneratePDF,
+    capturePreviewImage,
   };
 }

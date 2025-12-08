@@ -1,17 +1,20 @@
 "use client";
 
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { PDF_LOCK_MESSAGE } from "@/constants/pdf-lock";
 
 interface CertificateFormProps {
     isShareSupported: boolean;
     isGenerating: boolean;
-    handleShare: () => void;
-    handleGeneratePDF: () => void;
+    handleShare?: () => void;
+    handleGeneratePDF?: () => void;
     onAddToCart?: () => void;
     isAddingToCart?: boolean;
     canSubmit?: boolean;
-    validationMessage?: string;
     showGenerate?: boolean;
+    pdfLocked?: boolean;
+    pdfLockMessage?: string;
 }
 
 export function CertificateForm({
@@ -22,9 +25,30 @@ export function CertificateForm({
     onAddToCart,
     isAddingToCart,
     canSubmit = true,
-    validationMessage,
     showGenerate = false,
+    pdfLocked = true,
+    pdfLockMessage = PDF_LOCK_MESSAGE,
 }: CertificateFormProps) {
+    const handleLockedAction = () => {
+        toast.info(pdfLockMessage);
+    };
+
+    const handleGenerateClick = () => {
+        if (pdfLocked) {
+            handleLockedAction();
+            return;
+        }
+        handleGeneratePDF?.();
+    };
+
+    const handleShareClick = () => {
+        if (pdfLocked) {
+            handleLockedAction();
+            return;
+        }
+        handleShare?.();
+    };
+
     return (
         <form className="certificate-form space-y-4 rounded-2xl border border-border/50 bg-background/70 p-4 shadow-sm print:hidden">
             <div className="hidden gap-2 pt-2 md:flex">
@@ -33,7 +57,7 @@ export function CertificateForm({
                         type="button"
                         size="sm"
                         className="flex-1 bg-emerald-700 text-white hover:bg-emerald-800"
-                        onClick={handleGeneratePDF}
+                        onClick={handleGenerateClick}
                         disabled={isGenerating || !canSubmit}
                     >
                         {isGenerating ? "Gerando PDF..." : "Gerar PDF"}
@@ -57,7 +81,7 @@ export function CertificateForm({
                     <Button
                         type="button"
                         className="flex-1 bg-emerald-700 text-white hover:bg-emerald-800"
-                        onClick={handleGeneratePDF}
+                        onClick={handleGenerateClick}
                         disabled={isGenerating || !canSubmit}
                     >
                         {isGenerating ? "Gerando PDF..." : "Gerar PDF"}
@@ -68,7 +92,7 @@ export function CertificateForm({
                         type="button"
                         variant={isGenerating ? "outline" : "default"}
                         className="flex-1"
-                        onClick={handleShare}
+                        onClick={handleShareClick}
                         disabled={isGenerating || !canSubmit}
                     >
                         {isGenerating ? "Gerando PDF..." : "Compartilhar PDF"}
@@ -86,9 +110,6 @@ export function CertificateForm({
                     </Button>
                 )}
             </div>
-            {!canSubmit && validationMessage && (
-                <p className="text-xs text-destructive">{validationMessage}</p>
-            )}
         </form>
     );
 }

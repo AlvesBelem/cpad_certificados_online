@@ -10,6 +10,8 @@ import { CertificateForm } from "./CertificateForm";
 import Image from "next/image";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
+import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
 const DEFAULT_LOGO = "/igreja.png";
 
@@ -46,6 +48,11 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 const CERTIFICATE_TITLE = "Certificado de Encontro de Casais";
 const CERTIFICATE_SLUG = "encontro-casais";
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeEsposo",
+  "nomeEsposa",
+  "dataConclusao"
+];
 
 type CertificateInnerProps = {
   igrejaNome: string;
@@ -54,6 +61,9 @@ type CertificateInnerProps = {
 };
 
 function CertificateInner({ igrejaNome, campos, dataConclusaoFormatada }: CertificateInnerProps) {
+  const certificateModel = useCertificateModelContext();
+  const showDefaultWatermark = !certificateModel?.backgroundImage;
+
   const esposoTexto = campos.nomeEsposo || "Nome do esposo";
   const esposaTexto = campos.nomeEsposa || "Nome da esposa";
   const observacaoTexto =
@@ -66,16 +76,18 @@ function CertificateInner({ igrejaNome, campos, dataConclusaoFormatada }: Certif
 
   return (
     <div className="relative flex h-full flex-col rounded-[32px] bg-white p-6 text-[#6b4b1f] md:p-5">
-      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-        <Image
-          src="/alianca.png"
-          alt="Marca d'água de alianças"
-          width={650}
-          height={1024}
-          className="max-h-[90%] max-w-[90%] opacity-30 -translate-y-6"
-          priority
-        />
-      </div>
+      {showDefaultWatermark ? (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <Image
+            src="/alianca.png"
+            alt="Marca d'água de alianças"
+            width={650}
+            height={1024}
+            className="max-h-[90%] max-w-[90%] opacity-30 -translate-y-6"
+            priority
+          />
+        </div>
+      ) : null}
       <div className="space-y-3 text-center md:text-left">
         <div className="flex justify-center md:justify-start">
           <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-primary/20 bg-background shadow-md">
@@ -138,10 +150,26 @@ export function EncontroCasaisCertificateBuilder({ igrejaNome }: BuilderProps) {
 
   const [campos, setCampos] = useState<Campos>(() => createInitialCampos());
 
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
     fileName: `certificado-encontro-casais-${campos.nomeEsposo || "casal"}.pdf`,
     title: "Certificado Encontro de Casais",
     text: `Certificado de encontro de casais para ${campos.nomeEsposo || "casal"}`,
+  });
+
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: CERTIFICATE_SLUG,
+    title: CERTIFICATE_TITLE,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: [campos.nomeEsposo, campos.nomeEsposa].filter(Boolean).join(" & "),
+    getPreviewImage: capturePreviewImage,
   });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -155,7 +183,6 @@ export function EncontroCasaisCertificateBuilder({ igrejaNome }: BuilderProps) {
 
   const handleGenerateAndReset = async () => {
     await handleGeneratePDF();
-    setCampos(createInitialCampos());
   };
 
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
@@ -225,6 +252,10 @@ export function EncontroCasaisCertificateBuilder({ igrejaNome }: BuilderProps) {
           isGenerating={isGenerating}
           handleShare={handleShare}
           handleGeneratePDF={handleGenerateAndReset}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          canSubmit={isReady}
+          showGenerate={false}
         />
       </div>
 

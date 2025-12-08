@@ -143,29 +143,8 @@
 
 .certificate-content {
   position: relative;
-  overflow: visible;
-}
-
-.certificate-content::before,
-.certificate-content::after {
-  content: "";
-  position: absolute;
-  left: 3%;
-  right: 3%;
-  height: 6px;
-  border-radius: 999px;
-  --band-color: var(--certificate-frame-color, rgba(0, 0, 0, 0.35));
-  background: linear-gradient(90deg, transparent 0%, var(--band-color) 15%, var(--band-color) 85%, transparent 100%);
-  pointer-events: none;
-  opacity: 0.95;
-}
-
-.certificate-content::before {
-  top: 6mm;
-}
-
-.certificate-content::after {
-  bottom: 30mm;
+  overflow: hidden;
+  border-radius: 32px;
 }
 
 @page {
@@ -211,15 +190,13 @@
     display: flex !important;
     align-items: center;
     justify-content: center;
-    margin: auto !important;
-    width: 297mm;
-    height: 210mm;
-    margin-top: 0 !important;
+    margin: 0 auto !important;
+    width: 100%;
+    height: 100%;
   }
 
   .certificate-content {
-    margin-top: 30mm !important;
-    margin-bottom: 0 !important;
+    margin: 0 auto !important;
     display: block;
     page-break-inside: avoid;
   }

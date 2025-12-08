@@ -9,6 +9,7 @@ import { CertificatePreview } from "@/components/certificates/CertificatePreview
 import { CertificateForm } from "./CertificateForm";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
 const DEFAULT_VERSE = "\"Oh! quão bom e quão suave é que os irmãos vivam em união.\" Salmos 133:1";
 const SIGNATURE_LINE = "_____________________________";
@@ -40,6 +41,11 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 const CERTIFICATE_TITLE = "Certificado de Participação na Célula";
 const CERTIFICATE_SLUG = "participacao-celula";
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeParticipante",
+  "ano",
+  "liderCelula"
+];
 
 type CertificateInnerProps = {
   igrejaNome: string;
@@ -111,10 +117,26 @@ export function ParticipacaoCelulaCertificateBuilder({ igrejaNome }: BuilderProp
 
   const [campos, setCampos] = useState<Campos>(() => createInitialCampos());
 
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
     fileName: `certificado-celula-${campos.nomeParticipante || "participante"}.pdf`,
     title: "Certificado Participação em Célula",
     text: `Certificado de participação em célula para ${campos.nomeParticipante || "participante"}`,
+  });
+
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: CERTIFICATE_SLUG,
+    title: CERTIFICATE_TITLE,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: campos.nomeParticipante,
+    getPreviewImage: capturePreviewImage,
   });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -124,7 +146,6 @@ export function ParticipacaoCelulaCertificateBuilder({ igrejaNome }: BuilderProp
 
   const handleGenerateAndReset = async () => {
     await handleGeneratePDF();
-    setCampos(createInitialCampos());
   };
 
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
@@ -193,6 +214,10 @@ export function ParticipacaoCelulaCertificateBuilder({ igrejaNome }: BuilderProp
           isGenerating={isGenerating}
           handleShare={handleShare}
           handleGeneratePDF={handleGenerateAndReset}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          canSubmit={isReady}
+          showGenerate={false}
         />
       </div>
 

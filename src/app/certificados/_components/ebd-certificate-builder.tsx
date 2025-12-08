@@ -10,6 +10,7 @@ import { CertificatePreview } from "@/components/certificates/CertificatePreview
 import { CertificateForm } from "./CertificateForm";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
 const DEFAULT_LOGO = "/igreja.png";
 const DEFAULT_VERSE = "\"Habite ricamente em vós a palavra de Cristo.\" Colossenses 3:16";
@@ -48,6 +49,12 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 const CERTIFICATE_TITLE = "Certificado EBD";
 const CERTIFICATE_SLUG = "ebd";
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeAluno",
+  "trimestre",
+  "ano",
+  "dataConclusao"
+];
 
 type CertificateInnerProps = {
   logoSrc: string;
@@ -175,10 +182,26 @@ export function EbdCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Builder
 
   const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
     fileName: `certificado-ebd-${campos.nomeAluno || "aluno"}.pdf`,
     title: "Certificado EBD",
     text: `Certificado EBD para ${campos.nomeAluno || "aluno"}`,
+  });
+
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: CERTIFICATE_SLUG,
+    title: CERTIFICATE_TITLE,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: campos.nomeAluno,
+    getPreviewImage: capturePreviewImage,
   });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -192,7 +215,6 @@ export function EbdCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Builder
 
   const handleGenerateAndReset = async () => {
     await handleGeneratePDF();
-    setCampos(createInitialCampos());
   };
 
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
@@ -266,6 +288,10 @@ export function EbdCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Builder
           isGenerating={isGenerating}
           handleShare={handleShare}
           handleGeneratePDF={handleGenerateAndReset}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          canSubmit={isReady}
+          showGenerate={false}
         />
       </div>
 

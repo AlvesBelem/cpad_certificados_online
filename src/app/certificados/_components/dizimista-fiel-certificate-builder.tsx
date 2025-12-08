@@ -9,6 +9,7 @@ import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 
 const DEFAULT_LOGO = "/igreja.png";
@@ -42,6 +43,11 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 const CERTIFICATE_TITLE = "Certificado de Dizimista Fiel";
 const CERTIFICATE_SLUG = "dizimista-fiel";
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeMembro",
+  "dataRegistro",
+  "oficiante"
+];
 
 type CertificateInnerProps = {
   igrejaNome: string;
@@ -112,10 +118,26 @@ export function DizimistaFielCertificateBuilder({ igrejaNome }: BuilderProps) {
 
   const [campos, setCampos] = useState<Campos>(() => createInitialCampos());
 
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
     fileName: `certificado-dizimista-${campos.nomeMembro || "dizimista"}.pdf`,
     title: "Certificado de Dizimista Fiel",
     text: `Certificado de Dizimista Fiel para ${campos.nomeMembro || "membro"}`,
+  });
+
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: CERTIFICATE_SLUG,
+    title: CERTIFICATE_TITLE,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: campos.nomeMembro,
+    getPreviewImage: capturePreviewImage,
   });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -127,7 +149,6 @@ export function DizimistaFielCertificateBuilder({ igrejaNome }: BuilderProps) {
 
   const handleGenerateAndReset = async () => {
     await handleGeneratePDF();
-    setCampos(createInitialCampos());
   };
 
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
@@ -185,6 +206,10 @@ export function DizimistaFielCertificateBuilder({ igrejaNome }: BuilderProps) {
           isGenerating={isGenerating}
           handleShare={handleShare}
           handleGeneratePDF={handleGenerateAndReset}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          canSubmit={isReady}
+          showGenerate={false}
         />
       </div>
 

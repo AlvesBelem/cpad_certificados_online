@@ -9,6 +9,7 @@ import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 
 const DEFAULT_LOGO = "/igreja.png";
@@ -52,6 +53,12 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 const CERTIFICATE_TITLE = "Certificado de Discipulado";
 const CERTIFICATE_SLUG = "discipulado";
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeParticipante",
+  "dataInicio",
+  "dataFim",
+  "pastor"
+];
 
 type CertificateInnerProps = {
   logoSrc: string;
@@ -157,10 +164,26 @@ export function DiscipuladoCertificateBuilder({ igrejaNome, logoPath, logoUrl }:
 
   const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
     fileName: `certificado-discipulado-${campos.nomeParticipante || "aluno"}.pdf`,
     title: "Certificado de Discipulado",
     text: `Certificado de Discipulado para ${campos.nomeParticipante || "aluno"}`,
+  });
+
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: CERTIFICATE_SLUG,
+    title: CERTIFICATE_TITLE,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: campos.nomeParticipante,
+    getPreviewImage: capturePreviewImage,
   });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -173,7 +196,6 @@ export function DiscipuladoCertificateBuilder({ igrejaNome, logoPath, logoUrl }:
 
   const handleGenerateAndReset = async () => {
     await handleGeneratePDF();
-    setCampos(createInitialCampos());
   };
 
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
@@ -257,6 +279,10 @@ export function DiscipuladoCertificateBuilder({ igrejaNome, logoPath, logoUrl }:
           isGenerating={isGenerating}
           handleShare={handleShare}
           handleGeneratePDF={handleGenerateAndReset}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          canSubmit={isReady}
+          showGenerate={false}
         />
       </div>
 

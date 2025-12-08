@@ -12,12 +12,21 @@ export type CartPricing = {
   };
 };
 
+export type CartCertificateEntry = {
+  id: string;
+  quantity: number;
+  summary?: string | null;
+  previewImage?: string | null;
+};
+
 export type RawCartItem = {
   id: string;
   certificateSlug: string;
   title: string;
   quantity: number;
   summary?: string | null;
+  previewImage?: string | null;
+  entries: CartCertificateEntry[];
 };
 
 export type PricedCartItem = RawCartItem & {

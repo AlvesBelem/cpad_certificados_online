@@ -10,6 +10,7 @@ import { CertificatePreview } from "@/components/certificates/CertificatePreview
 import { CertificateForm } from "./CertificateForm";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
+import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
 const DEFAULT_LOGO = "/igreja.png";
 const DEFAULT_VERSE =
@@ -53,6 +54,11 @@ const BULK_FIELD_KEYS: (keyof Campos)[] = [
 const BULK_FIELDS = resolveBulkFields(BULK_FIELD_KEYS);
 const CERTIFICATE_TITLE = "Certificado de Ordenação Missionário";
 const CERTIFICATE_SLUG = "ordenacao-missionario";
+const REQUIRED_FIELDS: (keyof Campos)[] = [
+  "nomeOrdenando",
+  "dataOrdenacao",
+  "pastorOrdenante"
+];
 
 type CertificateInnerProps = {
   logoSrc: string;
@@ -161,10 +167,26 @@ export function OrdenacaoMissionarioCertificateBuilder({ igrejaNome, logoPath, l
 
   const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
-  const { certificateRef, isGenerating, isShareSupported, handleShare, handleGeneratePDF } = useCertificatePDF({
+  const {
+    certificateRef,
+    isGenerating,
+    isShareSupported,
+    handleShare,
+    handleGeneratePDF,
+    capturePreviewImage,
+  } = useCertificatePDF({
     fileName: `certificado-ordenacao-missionario-${campos.nomeOrdenando || "ordenacao"}.pdf`,
     title: "Certificado de Ordenação Ministério Missionário",
     text: `Certificado de ordenação ao ministério missionário para ${campos.nomeOrdenando || "membro"}`,
+  });
+
+  const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
+    slug: CERTIFICATE_SLUG,
+    title: CERTIFICATE_TITLE,
+    data: campos,
+    requiredFields: REQUIRED_FIELDS,
+    summary: campos.nomeOrdenando,
+    getPreviewImage: capturePreviewImage,
   });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -182,7 +204,6 @@ export function OrdenacaoMissionarioCertificateBuilder({ igrejaNome, logoPath, l
 
   const handleGenerateAndReset = async () => {
     await handleGeneratePDF();
-    setCampos(createInitialCampos());
   };
 
   const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
@@ -268,6 +289,10 @@ export function OrdenacaoMissionarioCertificateBuilder({ igrejaNome, logoPath, l
           isGenerating={isGenerating}
           handleShare={handleShare}
           handleGeneratePDF={handleGenerateAndReset}
+          onAddToCart={handleAddToCart}
+          isAddingToCart={isAddingToCart}
+          canSubmit={isReady}
+          showGenerate={false}
         />
       </div>
 

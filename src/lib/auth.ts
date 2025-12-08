@@ -3,6 +3,7 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { jwt } from "better-auth/plugins";
 import type { SocialProviders } from "@better-auth/core/social-providers";
 import { prisma } from "@/lib/prisma";
+import { normalizeRole } from "@/lib/roles";
 
 const defaultAppUrl = "http://localhost:3000";
 const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? defaultAppUrl;
@@ -112,7 +113,7 @@ export const auth = betterAuth({
             sub: user.id,
             email: user.email,
             igrejaId: igreja?.id ?? user.igrejaId ?? null,
-            role: user.role ?? null,
+            role: normalizeRole(user.role),
             igrejaStatus: igreja?.status ?? user.igrejaStatus ?? null,
           };
         },

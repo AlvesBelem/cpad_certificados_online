@@ -1,15 +1,23 @@
 import { PrismaClient } from "@prisma/client";
 import { cookies } from "next/headers";
 
+const isEdgeRuntime =
+  typeof (globalThis as { EdgeRuntime?: string }).EdgeRuntime !== "undefined" ||
+  process.env.NEXT_RUNTIME === "edge";
+
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
 };
 
-export const prisma =
-  globalForPrisma.prisma ??
-  new PrismaClient({
-    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
-  });
+let prismaInstance: PrismaClient | undefined;
+
+if (!isEdgeRuntime) {
+  prismaInstance =
+    globalForPrisma.prisma ??
+    new PrismaClient({
+      log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
+    });
+}
 
 const userIgrejaMiddlewareFlag = Symbol("userIgrejaMiddlewareFlag");
 
@@ -85,8 +93,11 @@ function ensureUserHasIgreja(client: PrismaClient) {
   typedClient[userIgrejaMiddlewareFlag] = true;
 }
 
-ensureUserHasIgreja(prisma);
-
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+if (prismaInstance) {
+  ensureUserHasIgreja(prismaInstance);
+  if (process.env.NODE_ENV !== "production") {
+    globalForPrisma.prisma = prismaInstance;
+  }
 }
+
+export const prisma = prismaInstance ?? ({} as PrismaClient);
