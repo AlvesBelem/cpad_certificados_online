@@ -6,7 +6,11 @@ import { prisma } from "@/lib/prisma";
 import { normalizeRole } from "@/lib/roles";
 
 const defaultAppUrl = "http://localhost:3000";
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? defaultAppUrl;
+const inferredVercelUrl =
+  process.env.VERCEL_URL && !process.env.NEXT_PUBLIC_APP_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : null;
+const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? inferredVercelUrl ?? defaultAppUrl;
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;

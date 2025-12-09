@@ -56,6 +56,7 @@ export function useCertificatePDF(options: UseCertificatePDFOptions) {
       node.style.display = "block";
       node.style.margin = "0 auto";
       node.style.maxWidth = "100%";
+      node.style.width = "100%";
       node.style.height = "100%";
     });
     document.body.appendChild(clone);

@@ -28,7 +28,7 @@ type CertificatePreviewProps = {
 
 const baseContainerClass = "certificate-preview relative rounded-[24px] bg-transparent select-none";
 const baseContentClass =
-  "certificate-content relative flex h-full flex-col overflow-hidden rounded-[32px] bg-white p-6 text-center md:p-10 print:mx-auto print:my-auto print:h-auto print:w-[94%] print:max-w-[285mm] print:rounded-[32px] print:p-12";
+  "certificate-content relative flex h-full w-full flex-col overflow-hidden rounded-[32px] bg-white p-6 text-center md:p-10 print:mx-auto print:my-auto print:h-auto print:w-[94%] print:max-w-[285mm] print:rounded-[32px] print:p-12";
 
 export function CertificatePreview({
   certificateRef,

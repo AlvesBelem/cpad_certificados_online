@@ -25,23 +25,6 @@ type Campos = {
 
 const REQUIRED_FIELDS: (keyof Campos)[] = ["nomeHomenageado", "pastor", "igreja", "congregacao"];
 
-const MEDAL_SVG =
-  "data:image/svg+xml;utf8," +
-  encodeURIComponent(
-    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'>
-      <defs>
-        <linearGradient id='g1' x1='0%' y1='0%' x2='100%' y2='100%'>
-          <stop offset='0%' stop-color='#fbbf24'/>
-          <stop offset='100%' stop-color='#b45309'/>
-        </linearGradient>
-      </defs>
-      <circle cx='100' cy='100' r='90' fill='url(#g1)' stroke='#8b5a00' stroke-width='8'/>
-      <circle cx='100' cy='100' r='60' fill='#0f172a' stroke='#fcd34d' stroke-width='8'/>
-      <text x='50%' y='55%' font-size='28' font-family='serif' font-weight='bold' fill='#fcd34d' text-anchor='middle'>HONRA</text>
-      <text x='50%' y='75%' font-size='20' font-family='serif' font-weight='bold' fill='#fcd34d' text-anchor='middle'>MÉRITO</text>
-    </svg>`,
-  );
-
 export function HonraMeritoAssembleiaCertificateBuilder() {
   const [campos, setCampos] = useState<Campos>({
     igreja: "Assembleia de Deus em Belém",
@@ -178,6 +161,10 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
         mobileAlt="Prévia do certificado de honra ao mérito"
         frameColor="#0f172a"
         allowOverflow
+        widthMm={267} // ~90% de A4 paisagem
+        heightMm={189}
+        printWidthMm={297}
+        printHeightMm={210}
       >
         <CertificateInner campos={campos} dataFormatada={dataFormatada} logoSrc={logoSrc} />
       </CertificatePreview>
@@ -206,29 +193,31 @@ function CertificateInner({ campos, dataFormatada, logoSrc }: InnerProps) {
             priority
             onError={(event) => {
               const target = event.currentTarget as HTMLImageElement;
-              if (target.src !== "http://localhost/igreja.png" && !target.src.endsWith("/igreja.png")) {
-                target.src = "/igreja.png";
-              }
+              target.src = "/igreja.png";
             }}
           />
         </div>
         <div className="space-y-1">
           <p className="text-xs font-semibold uppercase tracking-[0.45em] text-primary/80">Certificado</p>
-          <h2 className="text-base font-semibold text-[#0f172a]">
-            {campos.igreja || "Igreja"} - {campos.congregacao || "Congregação"}
+          <p className="text-base font-bold uppercase tracking-[0.22em] text-[#0f172a] md:text-lg">
+            Certificado de Honra ao Mérito
+          </p>
+          <h2 className="text-base font-semibold text-[#0f172a] md:text-lg">
+            <span className="font-bold">{campos.igreja || "Igreja"}</span> -{" "}
+            <span className="font-bold">{campos.congregacao || "Congregação"}</span>
           </h2>
-          <p className="text-sm text-[#0f172a]/80">
+          <p className="text-base text-[#0f172a]/80 md:text-lg">
             na pessoa de seu Pastor, sente-se honrada em conferir a
           </p>
         </div>
-        <h1 className="text-center text-3xl font-bold uppercase text-[#0f172a] md:text-4xl">
+        <h1 className="text-center text-2xl font-bold uppercase text-[#0f172a] md:text-3xl">
           {campos.nomeHomenageado || "Nome do homenageado"}
         </h1>
       </header>
 
       <main className="relative z-20 mt-8 flex flex-col items-center gap-4 text-center text-lg leading-relaxed text-[#0f172a] md:text-xl">
         <p className="max-w-3xl">
-          este certificado {campos.observacao || "pelos serviços realizados em prol da obra de Deus."}
+          com este certificado {campos.observacao || "pelos serviços realizados em prol da obra de Deus."}
         </p>
         <p className="text-base text-[#0f172a]/80">
           {campos.cidade || "Cidade/UF"}, {dataFormatada}
@@ -260,9 +249,8 @@ function CertificateInner({ campos, dataFormatada, logoSrc }: InnerProps) {
 function Decor() {
   return (
     <>
-      <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#223d8f] via-[#2b4fa8] to-[#f3f4ff] opacity-90" />
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_15%_20%,rgba(255,255,255,0.2),transparent_45%),radial-gradient(circle_at_80%_15%,rgba(255,255,255,0.14),transparent_40%)]" />
-      <div className="absolute inset-0 z-10 opacity-70">
+      <div className="absolute inset-0 z-0 bg-gradient-to-br from-[#fff7e0] via-[#fff1c2] to-[#fffaf0] opacity-95" />
+      <div className="absolute inset-0 z-10 opacity-80">
         <div className="absolute -left-10 top-0 h-full w-56 rotate-[12deg] bg-gradient-to-b from-[#f59e0b] via-[#fbbf24] to-[#b45309] blur-[1px]" />
         <div className="absolute -left-2 top-0 h-full w-52 rotate-[-8deg] bg-gradient-to-b from-[#fde68a] via-[#f59e0b] to-[#92400e] mix-blend-screen opacity-90 blur-[1px]" />
       </div>
