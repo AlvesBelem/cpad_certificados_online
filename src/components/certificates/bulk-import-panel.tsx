@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
-import { read, utils, writeFile } from "xlsx";
+import type { Worksheet } from "exceljs";
 import { toast } from "sonner";
 import { Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -45,13 +45,17 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
   const resolvedSlug = useMemo(() => certificateSlug || slugify(certificateTitle), [certificateSlug, certificateTitle]);
   const templateFileName = `modelo-${resolvedSlug || "certificado"}.xlsx`;
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const ExcelJS = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Certificados");
     const header = fields.map((field) => field.label);
     const examples = fields.map((field) => field.example ?? "");
-    const worksheet = utils.aoa_to_sheet([header, examples]);
-    const workbook = utils.book_new();
-    utils.book_append_sheet(workbook, worksheet, "Certificados");
-    writeFile(workbook, templateFileName);
+    worksheet.addRow(header);
+    worksheet.addRow(examples);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    downloadWorkbook(buffer, templateFileName);
   };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -63,14 +67,12 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
     setRows([]);
 
     try {
-      const buffer = await file.arrayBuffer();
-      const workbook = read(buffer, { type: "array" });
-      const firstSheetName = workbook.SheetNames[0];
-      if (!firstSheetName) {
+      const workbook = await loadWorkbookFromFile(file);
+      const firstSheet = workbook.worksheets[0];
+      if (!firstSheet) {
         throw new Error("Planilha vazia ou sem abas.");
       }
-      const sheet = workbook.Sheets[firstSheetName];
-      const rawRows = utils.sheet_to_json<string[]>(sheet, { header: 1, raw: false, defval: "" });
+      const rawRows = extractRowsFromWorksheet(firstSheet);
       if (!rawRows.length) {
         throw new Error("Não encontramos linhas na planilha enviada.");
       }
@@ -133,7 +135,7 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
         <Input
           type="file"
           ref={inputRef}
-          accept=".xlsx,.xls,.csv"
+          accept=".xlsx,.csv"
           onChange={handleFileChange}
           disabled={parsing}
           className="max-w-md cursor-pointer"
@@ -152,7 +154,7 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
         ) : (
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <Upload className={cn("h-4 w-4", parsing ? "animate-pulse text-primary" : "text-muted-foreground")} />
-            <span>{parsing ? "Processando planilha..." : "Aceita arquivos .xlsx, .xls ou .csv"}</span>
+            <span>{parsing ? "Processando planilha..." : "Aceita arquivos .xlsx ou .csv"}</span>
           </div>
         )}
       </div>
@@ -181,7 +183,7 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
                   <tr key={`${index}-${row[fields[0].key] ?? index}`} className="border-t border-border/40">
                     {fields.map((field) => (
                       <td key={`${field.key}-${index}`} className="px-3 py-2 text-foreground">
-                        {row[field.key] || <span className="text-muted-foreground/70">—</span>}
+                        {row[field.key] || <span className="text-muted-foreground/70">-</span>}
                       </td>
                     ))}
                     <td className="px-3 py-2">
@@ -205,12 +207,159 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
   );
 }
 
+function downloadWorkbook(buffer: ArrayBuffer, fileName: string) {
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+async function loadWorkbookFromFile(file: File) {
+  const extension = getFileExtension(file.name);
+  const ExcelJS = await import("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  const buffer = await file.arrayBuffer();
+
+  if (extension === "csv") {
+    const text = new TextDecoder().decode(buffer);
+    const rows = parseCsv(text);
+    const worksheet = workbook.addWorksheet("Planilha");
+    rows.forEach((cells) => worksheet.addRow(cells));
+    return workbook;
+  }
+
+  if (extension === "xlsx") {
+    await workbook.xlsx.load(buffer);
+    return workbook;
+  }
+
+  if (extension === "xls") {
+    throw new Error("Arquivos .xls não são suportados. Salve o arquivo como .xlsx ou .csv.");
+  }
+
+  throw new Error("Formato de arquivo não suportado. Envie um .xlsx ou .csv.");
+}
+
+function extractRowsFromWorksheet(worksheet: Worksheet) {
+  const rows: string[][] = [];
+  let columnCount = 0;
+
+  worksheet.eachRow({ includeEmpty: true }, (row) => {
+    const values = row.values as Array<unknown>;
+    const cells = values.slice(1).map(formatCellValue);
+    columnCount = Math.max(columnCount, cells.length);
+    rows.push(cells);
+  });
+
+  if (!rows.length || columnCount === 0) {
+    return [];
+  }
+
+  return rows.map((cells) =>
+    cells.length < columnCount ? [...cells, ...Array(columnCount - cells.length).fill("")] : cells,
+  );
+}
+
+function formatCellValue(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString();
+
+  if (typeof value === "object") {
+    const cell = value as { result?: unknown; text?: string; richText?: Array<{ text?: string }> };
+    if (cell.result !== undefined) {
+      return formatCellValue(cell.result);
+    }
+    if (Array.isArray(cell.richText)) {
+      return cell.richText.map((segment) => segment.text ?? "").join("");
+    }
+    if (cell.text !== undefined) {
+      return String(cell.text);
+    }
+  }
+
+  return String(value);
+}
+
+function getFileExtension(fileName: string) {
+  const lastDotIndex = fileName.lastIndexOf(".");
+  if (lastDotIndex === -1) return "";
+  return fileName.slice(lastDotIndex + 1).toLowerCase();
+}
+
 function normalizeValue(value: string) {
   return value
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[^a-z0-9]/g, "");
+}
+
+function parseCsv(text: string) {
+  const delimiter = detectDelimiter(text);
+  const rows: string[][] = [];
+  let currentCell = "";
+  let currentRow: string[] = [];
+  let inQuotes = false;
+
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    const nextChar = text[i + 1];
+
+    if (char === '"') {
+      if (inQuotes && nextChar === '"') {
+        currentCell += '"';
+        i += 1; // skip escaped quote
+      } else {
+        inQuotes = !inQuotes;
+      }
+      continue;
+    }
+
+    const isDelimiter = char === delimiter && !inQuotes;
+    const isNewline = (char === "\n" || char === "\r") && !inQuotes;
+
+    if (isDelimiter) {
+      currentRow.push(currentCell);
+      currentCell = "";
+      continue;
+    }
+
+    if (isNewline) {
+      if (char === "\r" && nextChar === "\n") {
+        i += 1; // skip CRLF
+      }
+      currentRow.push(currentCell);
+      rows.push(currentRow);
+      currentCell = "";
+      currentRow = [];
+      continue;
+    }
+
+    currentCell += char;
+  }
+
+  // push last cell/row
+  if (currentCell.length > 0 || currentRow.length > 0) {
+    currentRow.push(currentCell);
+  }
+  if (currentRow.length > 0) {
+    rows.push(currentRow);
+  }
+
+  return rows;
+}
+
+function detectDelimiter(text: string) {
+  const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
+  const commaCount = (firstLine.match(/,/g) ?? []).length;
+  const semicolonCount = (firstLine.match(/;/g) ?? []).length;
+  if (semicolonCount > commaCount) return ";";
+  return ",";
 }
 
 function mapRowFromSheet(

@@ -25,7 +25,7 @@ export const auth = betterAuth({
   appName: "AdiGreja",
   baseURL: appUrl,
   secret: process.env.BETTER_AUTH_SECRET,
-  database: prismaAdapter(prisma, { provider: "sqlite" }),
+  database: prismaAdapter(prisma, { provider: "postgresql" }),
   emailAndPassword: {
     enabled: true,
     autoSignIn: true,
