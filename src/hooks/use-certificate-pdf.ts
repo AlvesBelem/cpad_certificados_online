@@ -13,7 +13,7 @@ type UseCertificatePDFOptions = {
 const PDF_LOCK_ENABLED = true;
 const PAGE_WIDTH_MM = 297;
 const PAGE_HEIGHT_MM = 210;
-const PREVIEW_SCALE = 0.9;
+const PREVIEW_SCALE = 0.98;
 const PADDING_X_MM = ((1 - PREVIEW_SCALE) * PAGE_WIDTH_MM) / 2;
 const PADDING_Y_MM = ((1 - PREVIEW_SCALE) * PAGE_HEIGHT_MM) / 2;
 

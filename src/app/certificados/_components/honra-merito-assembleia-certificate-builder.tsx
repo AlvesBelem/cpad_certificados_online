@@ -10,8 +10,10 @@ import { CertificateForm } from "@/app/certificados/_components/CertificateForm"
 import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
-const CERTIFICATE_TITLE = "Certificado de Honra ao Mérito (Assembleia)";
+const CERTIFICATE_TITLE = "Certificado de Honra ao Merito (Assembleia)";
 const CERTIFICATE_SLUG = "honra-merito-assembleia";
+const LINE = "_________________________";
+const LINE_LONG = "________________________________________";
 
 type Campos = {
   igreja: string;
@@ -27,13 +29,13 @@ const REQUIRED_FIELDS: (keyof Campos)[] = ["nomeHomenageado", "pastor", "igreja"
 
 export function HonraMeritoAssembleiaCertificateBuilder() {
   const [campos, setCampos] = useState<Campos>({
-    igreja: "Assembleia de Deus em Belém",
-    congregacao: "Congregação Rio Jordão II",
-    nomeHomenageado: "Nome do homenageado",
-    pastor: "Nome do Pastor",
-    data: new Date().toISOString().slice(0, 10),
-    cidade: "Cidade/UF",
-    observacao: "pelos serviços realizados em prol da obra de Deus.",
+    igreja: "",
+    congregacao: "",
+    nomeHomenageado: "",
+    pastor: "",
+    data: "",
+    cidade: "",
+    observacao: "",
   });
   const [logoUrl, setLogoUrl] = useState("");
   const [logoPath, setLogoPath] = useState<string | null>(null);
@@ -46,7 +48,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
   const dataFormatada = useMemo(() => {
     if (!campos.data) return "____/____/______";
     const date = new Date(campos.data);
-    if (Number.isNaN(date.getTime())) return campos.data;
+    if (Number.isNaN(date.getTime())) return "____/____/______";
     return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" });
   }, [campos.data]);
 
@@ -60,7 +62,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
   } = useCertificatePDF({
     fileName: `honra-merito-${campos.nomeHomenageado || "homenageado"}.pdf`,
     title: CERTIFICATE_TITLE,
-    text: `Certificado de honra ao mérito para ${campos.nomeHomenageado || "homenageado"}`,
+    text: `Certificado de honra ao merito para ${campos.nomeHomenageado || "homenageado"}`,
   });
 
   const { handleAddToCart, isAddingToCart, isReady } = useCertificateCartButton<Campos>({
@@ -68,7 +70,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
     title: CERTIFICATE_TITLE,
     data: campos,
     requiredFields: REQUIRED_FIELDS,
-    summary: `${campos.nomeHomenageado} • ${campos.congregacao}`,
+    summary: `${campos.nomeHomenageado || "Homenageado"} • ${campos.congregacao || "Congregacao"}`,
     getPreviewImage: capturePreviewImage,
   });
 
@@ -86,7 +88,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
       <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold text-foreground">Dados do certificado</h3>
-          <p className="text-sm text-muted-foreground">Preencha os campos dinâmicos conforme a homenagem.</p>
+          <p className="text-sm text-muted-foreground">Preencha os campos dinamicos conforme a homenagem.</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2">
@@ -94,7 +96,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
             <Input id="igreja" value={campos.igreja} onChange={handleChange("igreja")} />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="congregacao">Congregação</Label>
+            <Label htmlFor="congregacao">Congregacao</Label>
             <Input id="congregacao" value={campos.congregacao} onChange={handleChange("congregacao")} />
           </div>
           <div className="space-y-2">
@@ -123,7 +125,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
             rows={3}
             value={campos.observacao}
             onChange={handleChange("observacao")}
-            placeholder="pelos serviços realizados em prol da obra de Deus."
+            placeholder="pelos servicos realizados em prol da obra de Deus."
           />
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -135,12 +137,12 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
               onChange={(event) => setLogoUrl(event.target.value)}
               placeholder="https://exemplo.com/logo.png"
             />
-            <p className="text-xs text-muted-foreground">Usamos a logo padrão se este campo estiver vazio.</p>
+            <p className="text-xs text-muted-foreground">Usamos a logo padrao se este campo estiver vazio.</p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="logoUpload">Upload da logo (opcional)</Label>
             <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} />
-            <p className="text-xs text-muted-foreground">PNG/JPG. Se não enviar, usamos a logo padrão.</p>
+            <p className="text-xs text-muted-foreground">PNG/JPG. Se nao enviar, usamos a logo padrao.</p>
           </div>
         </div>
         <CertificateForm
@@ -158,11 +160,11 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
       <CertificatePreview
         certificateRef={certificateRef}
         mobileImage="/certificado_discipulado.jpg"
-        mobileAlt="Prévia do certificado de honra ao mérito"
+        mobileAlt="Previa do certificado de honra ao merito"
         frameColor="#0f172a"
         allowOverflow
-        widthMm={267} // ~90% de A4 paisagem
-        heightMm={189}
+        widthMm={282} // ~95% de A4 paisagem
+        heightMm={200}
         printWidthMm={297}
         printHeightMm={210}
       >
@@ -179,6 +181,16 @@ type InnerProps = {
 };
 
 function CertificateInner({ campos, dataFormatada, logoSrc }: InnerProps) {
+  const fill = (value: string, placeholder: string) => (value && value.trim().length ? value : placeholder);
+  const dataDisplay = campos.data?.trim().length ? dataFormatada : "____/____/______";
+  const igrejaDisplay = fill(campos.igreja, LINE);
+  const congregacaoDisplay = fill(campos.congregacao, LINE);
+  const nomeDisplay = fill(campos.nomeHomenageado, LINE_LONG);
+  const pastorDisplay = fill(campos.pastor, LINE);
+  const homenageadoDisplay = fill(campos.nomeHomenageado, LINE);
+  const cidadeDisplay = fill(campos.cidade, LINE);
+  const observacaoDisplay = fill(campos.observacao, LINE_LONG);
+
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-[32px] bg-white/95 p-8 text-[#0f172a] md:p-10">
       <Decor />
@@ -198,46 +210,38 @@ function CertificateInner({ campos, dataFormatada, logoSrc }: InnerProps) {
           />
         </div>
         <div className="space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.45em] text-primary/80">Certificado</p>
-          <p className="text-base font-bold uppercase tracking-[0.22em] text-[#0f172a] md:text-lg">
+          <p className="text-2xl font-bold uppercase tracking-[0.3em] text-[#0f172a] md:text-3xl">
             Certificado de Honra ao Mérito
           </p>
-          <h2 className="text-base font-semibold text-[#0f172a] md:text-lg">
-            <span className="font-bold">{campos.igreja || "Igreja"}</span> -{" "}
-            <span className="font-bold">{campos.congregacao || "Congregação"}</span>
+          <h2 className="pt-7 text-base font-semibold text-[#0f172a] md:pt-7 md:text-lg">
+            <span className="font-bold">{igrejaDisplay}</span> - <span className="font-bold">{congregacaoDisplay}</span>
           </h2>
           <p className="text-base text-[#0f172a]/80 md:text-lg">
             na pessoa de seu Pastor, sente-se honrada em conferir a
           </p>
         </div>
-        <h1 className="text-center text-2xl font-bold uppercase text-[#0f172a] md:text-3xl">
-          {campos.nomeHomenageado || "Nome do homenageado"}
-        </h1>
+        <h1 className="text-center text-2xl font-bold uppercase text-[#0f172a] md:text-3xl">{nomeDisplay}</h1>
       </header>
 
       <main className="relative z-20 mt-8 flex flex-col items-center gap-4 text-center text-lg leading-relaxed text-[#0f172a] md:text-xl">
-        <p className="max-w-3xl">
-          com este certificado {campos.observacao || "pelos serviços realizados em prol da obra de Deus."}
-        </p>
-        <p className="text-base text-[#0f172a]/80">
-          {campos.cidade || "Cidade/UF"}, {dataFormatada}
-        </p>
+        <div className="mx-auto w-full max-w-3xl space-y-2 text-left">
+          <p className="text-center text-base md:text-lg">com este certificado {observacaoDisplay}</p>
+          <p className="pt-8 text-right text-base text-[#0f172a]/80 mr-[105px] ml-[10px]">{cidadeDisplay}, {dataDisplay}</p>
+        </div>
       </main>
 
       <footer className="relative z-20 mt-10 grid gap-8 text-center text-sm uppercase tracking-[0.25em] text-[#0f172a]/80 md:grid-cols-2">
         <div className="flex flex-col items-center gap-3">
-          <div className="h-12 w-40 border-b-2 border-[#0f172a]/60" aria-hidden="true" />
+          <div className="h-12 w-72 border-b-2 border-[#0f172a]/60" aria-hidden="true" />
           <div className="space-y-1 text-[#0f172a]">
-            <p className="text-base font-semibold tracking-normal text-[#0f172a]">{campos.pastor || "Pastor"}</p>
+            <p className="text-base font-semibold tracking-normal text-[#0f172a]">{pastorDisplay}</p>
             <p className="text-xs uppercase tracking-[0.3em] text-[#0f172a]/70">Pastor</p>
           </div>
         </div>
         <div className="flex flex-col items-center gap-3">
-          <div className="h-12 w-40 border-b-2 border-[#0f172a]/60" aria-hidden="true" />
+          <div className="h-12 w-72 border-b-2 border-[#0f172a]/60" aria-hidden="true" />
           <div className="space-y-1 text-[#0f172a]">
-            <p className="text-base font-semibold tracking-normal text-[#0f172a]">
-              {campos.nomeHomenageado || "Homenageado"}
-            </p>
+            <p className="text-base font-semibold tracking-normal text-[#0f172a]">{homenageadoDisplay}</p>
             <p className="text-xs uppercase tracking-[0.3em] text-[#0f172a]/70">Homenageado(a)</p>
           </div>
         </div>
