@@ -83,9 +83,9 @@ export function AdminDashboard({ data, adminName }: AdminDashboardProps) {
       helper: "Pedidos confirmados",
     },
     {
-      label: "Clientes ativos",
-      value: clients.length.toLocaleString("pt-BR"),
-      helper: "Usuarios finais",
+      label: "Ticket mǭdio",
+      value: currencyFormatter.format(data.totals.averageTicket || 0),
+      helper: "Receita por pedido",
     },
   ];
 
@@ -225,6 +225,11 @@ export function AdminDashboard({ data, adminName }: AdminDashboardProps) {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-[2fr,1.2fr]">
+              <PaymentBreakdownCard items={data.paymentBreakdown.slice(0, 4)} />
+              <ReportsCard reports={data.reports} />
             </div>
           </div>
         );

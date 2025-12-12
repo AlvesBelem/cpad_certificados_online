@@ -43,6 +43,7 @@ export type AdminDashboardData = {
     totalRevenue: number;
     totalCertificates: number;
     totalOrders: number;
+    averageTicket: number;
     activeModels: number;
     clients: number;
   };
@@ -77,6 +78,7 @@ function formatUser(user: UserWithRole): DashboardUser {
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   const [orders, models, clients, employees] = await Promise.all([
     prisma.certificateOrder.findMany({
+      where: { status: "PAID" },
       orderBy: { createdAt: "desc" },
     }),
     prisma.certificateModel.findMany({
@@ -94,6 +96,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
   const totalRevenue = orders.reduce((total, order) => total + order.totalAmountInCents / 100, 0);
   const totalCertificates = orders.reduce((total, order) => total + order.quantity, 0);
+  const averageTicket = orders.length ? totalRevenue / orders.length : 0;
 
   const paymentMap = new Map<string, PaymentBreakdown>();
   orders.forEach((order) => {
@@ -152,6 +155,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       totalRevenue,
       totalCertificates,
       totalOrders: orders.length,
+      averageTicket,
       activeModels: models.filter((model) => model.isActive).length,
       clients: clients.length,
     },
