@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useMemo, useState, type ChangeEvent } from "react";
-import Image from "next/image";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { Input } from "@/components/ui/input";
@@ -93,7 +92,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
     getPreviewImage: capturePreviewImage,
   });
 
-  const defaultLogo = "/logo-assembleia.png";
+  const defaultLogo = "/assets/logos/logo-assembleia.png";
   const logoSrc = logoPath || (logoUrl.trim() || defaultLogo);
 
   const handleLogoUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -284,7 +283,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
 
       <CertificatePreview
         certificateRef={certificateRef}
-        mobileImage="/certificado_discipulado.jpg"
+        mobileImage="/certificates/honra-merito-assembleia/certificado_honra_ao_merito.jpg"
         mobileAlt="Prévia do certificado de honra ao mérito"
         frameColor="#000000"
         allowOverflow
@@ -321,6 +320,7 @@ function CertificateInner({ campos, dataFormatada, logoSrc, defaultLogo }: Inner
     <div className="relative flex h-full flex-col overflow-hidden rounded-[32px] bg-white/95 p-8 text-black md:p-10">
       <Decor />
       <div className="relative z-30 flex justify-center pt-2">
+        {/* eslint-disable-next-line @next/next/no-img-element -- need plain img to support blob/object URLs from uploads */}
         <img
           src={logoSrc}
           alt="Logo"
