@@ -61,8 +61,12 @@ export function LoginContent() {
         throw new Error(authError.message || "Nao foi possivel autenticar. Tente novamente.");
       }
 
-      const url = data?.url || redirectTo;
-      router.push(url);
+      const maybeUrl =
+        data && typeof data === "object" && "url" in data && typeof (data as { url?: unknown }).url === "string"
+          ? (data as { url: string }).url
+          : null;
+
+      router.push(maybeUrl || redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar.");
     } finally {
