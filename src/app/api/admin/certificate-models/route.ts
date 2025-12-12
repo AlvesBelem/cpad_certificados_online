@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
-import { promises as fs } from "fs";
 import path from "path";
 import { NextResponse, type NextRequest } from "next/server";
+import { del, put } from "@vercel/blob";
 import sharp from "sharp";
 import { CERTIFICATE_TEMPLATES } from "@/constants/certificates";
 import { prisma } from "@/lib/prisma";
@@ -24,9 +24,6 @@ async function persistFile(file: File, subFolder: string, tenantSlug: string) {
   const arrayBuffer = await file.arrayBuffer();
   let buffer = Buffer.from(arrayBuffer) as BinaryBuffer;
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "tenants", tenantSlug, subFolder);
-  await fs.mkdir(uploadDir, { recursive: true });
-
   const extensionFromName = path.extname(file.name) || "";
   const extensionFromType = file.type?.split("/").pop();
   let extension = (extensionFromName || (extensionFromType ? `.${extensionFromType}` : "")).replace(/[^.\w]/g, "");
@@ -43,19 +40,23 @@ async function persistFile(file: File, subFolder: string, tenantSlug: string) {
   }
 
   const fileName = `${Date.now()}-${randomUUID()}${extension || ""}`;
-  const filePath = path.join(uploadDir, fileName);
-  await fs.writeFile(filePath, buffer);
+  const blobPath = `${subFolder}/${tenantSlug}/${fileName}`;
+  const blob = await put(blobPath, buffer, {
+    access: "public",
+    contentType: file.type || "application/octet-stream",
+    addRandomSuffix: false,
+  });
 
-  return `/uploads/tenants/${tenantSlug}/${subFolder}/${fileName}`;
+  return blob.url;
 }
 
-async function deleteStaticFile(filePath: string | null | undefined) {
-  if (!filePath) {
-    return;
+async function deleteRemoteFile(filePath: string | null | undefined) {
+  if (!filePath) return;
+  try {
+    await del(filePath);
+  } catch {
+    // best-effort cleanup
   }
-  const normalizedPath = filePath.replace(/^[/\\]+/, "");
-  const absolutePath = path.join(process.cwd(), "public", normalizedPath);
-  await fs.unlink(absolutePath).catch(() => undefined);
 }
 
 const MAX_IMAGE_WIDTH = 3508;
@@ -228,8 +229,8 @@ export async function PATCH(request: NextRequest) {
     });
 
     await Promise.all([
-      deleteStaticFile(existing.backgroundImage),
-      deleteStaticFile(existing.previewImage),
+      deleteRemoteFile(existing.backgroundImage),
+      deleteRemoteFile(existing.previewImage),
     ]);
 
     return NextResponse.json({
@@ -272,10 +273,10 @@ export async function DELETE(request: NextRequest) {
     });
 
     await Promise.all([
-      deleteStaticFile(existing.previewImage),
-      deleteStaticFile(existing.backgroundImage),
-      deleteStaticFile(existing.topBorderImage),
-      deleteStaticFile(existing.bottomBorderImage),
+      deleteRemoteFile(existing.previewImage),
+      deleteRemoteFile(existing.backgroundImage),
+      deleteRemoteFile(existing.topBorderImage),
+      deleteRemoteFile(existing.bottomBorderImage),
     ]);
 
     return NextResponse.json({ success: true, id: existing.id });
