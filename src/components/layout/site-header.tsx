@@ -40,7 +40,6 @@ export function SiteHeader() {
       toast.error("Nao foi possivel sair. Tente novamente.");
     } finally {
       setSigningOut(false);
-      setShowUserMenu(false);
     }
   };
 
