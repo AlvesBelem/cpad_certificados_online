@@ -27,9 +27,17 @@ export type DashboardModel = {
 
 export type PaymentBreakdown = {
   method: string;
-  totalRevenue: number;
-  orders: number;
+  paidRevenue: number;
+  paidOrders: number;
+  totalOrders: number;
   certificates: number;
+  statusCounts: {
+    PAID: number;
+    PENDING: number;
+    CANCELED: number;
+    FAILED: number;
+    OTHER: number;
+  };
 };
 
 export type ReportRow = {
@@ -111,17 +119,32 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   const averageTicket = paidOrders.length ? totalRevenue / paidOrders.length : 0;
 
   const paymentMap = new Map<string, PaymentBreakdown>();
-  paidOrders.forEach((order) => {
-    const method = order.paymentMethod || "INDIFERENTE";
+
+  orders.forEach((order) => {
+    const method = (order.paymentMethod || "INDIFERENTE").toUpperCase();
     const entry = paymentMap.get(method) ?? {
       method,
-      totalRevenue: 0,
-      orders: 0,
+      paidRevenue: 0,
+      paidOrders: 0,
+      totalOrders: 0,
       certificates: 0,
+      statusCounts: { PAID: 0, PENDING: 0, CANCELED: 0, FAILED: 0, OTHER: 0 },
     };
-    entry.totalRevenue += order.totalAmountInCents / 100;
-    entry.orders += 1;
+
+    entry.totalOrders += 1;
     entry.certificates += order.quantity;
+
+    const status = order.status as keyof PaymentBreakdown["statusCounts"];
+    if (status === "PAID") {
+      entry.paidRevenue += order.totalAmountInCents / 100;
+      entry.paidOrders += 1;
+    }
+    if (entry.statusCounts[status] !== undefined) {
+      entry.statusCounts[status] += 1;
+    } else {
+      entry.statusCounts.OTHER += 1;
+    }
+
     paymentMap.set(method, entry);
   });
 
@@ -171,7 +194,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       activeModels: models.filter((model) => model.isActive).length,
       clients: clients.length,
     },
-    paymentBreakdown: Array.from(paymentMap.values()).sort((a, b) => b.totalRevenue - a.totalRevenue),
+    paymentBreakdown: Array.from(paymentMap.values()).sort((a, b) => b.paidRevenue - a.paidRevenue),
     reports,
     orders: orders.map((order) => ({
       id: order.id,
