@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizeRole } from "@/lib/roles";
 
 const appUrl = getAppUrl();
+const appHost = new URL(appUrl).hostname;
 
 export const auth = betterAuth({
   appName: "AdiGreja",
@@ -38,6 +39,14 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 24 hours
     storeSessionInDatabase: false,
+    cookie: {
+      name: "better-auth.session_token",
+      domain: appHost,
+      sameSite: "lax",
+      secure: true,
+      httpOnly: true,
+      path: "/",
+    },
   },
   databaseHooks: {
     user: {
