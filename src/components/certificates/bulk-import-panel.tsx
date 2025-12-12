@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { slugify } from "@/lib/slugify";
+import { calculateCertificatePricing } from "@/lib/pricing";
 
 export type BulkImportField = {
   key: string;
@@ -30,6 +31,7 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
+  const [submittingOrder, setSubmittingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -119,6 +121,42 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
   };
 
   const previewRows = rows.slice(0, 5);
+  const pricing = useMemo(() => calculateCertificatePricing(rows.length), [rows.length]);
+
+  const handleCreateOrder = async () => {
+    if (!rows.length) {
+      toast.error("Importe a planilha antes de registrar o pedido.");
+      return;
+    }
+
+    setSubmittingOrder(true);
+    try {
+      const response = await fetch("/api/admin/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentMethod: "PIX_MANUAL",
+          status: "PAID",
+          quantity: pricing.quantity,
+          totalAmountInCents: pricing.totalInCents,
+          notes: `Planilha ${certificateTitle} (${pricing.quantity} certificados)`,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.message || "Nao foi possivel registrar o pedido.");
+      }
+
+      toast.success(
+        `Pedido registrado: ${pricing.quantity} certificados por R$ ${(pricing.totalInCents / 100).toFixed(2)}.`,
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao registrar o pedido.");
+    } finally {
+      setSubmittingOrder(false);
+    }
+  };
 
   return (
     <section className="rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm shadow-sm">
@@ -170,6 +208,22 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
             {rows.length === 1 ? "linha" : "linhas"}. Clique em &ldquo;Aplicar&rdquo; para preencher o formulario com os dados
             de cada participante.
           </p>
+          <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-4 py-3 text-xs">
+            <p className="font-semibold text-foreground">
+              Resumo: {pricing.quantity} certificados ·{" "}
+              <span className="text-primary">R$ {(pricing.totalInCents / 100).toFixed(2)}</span> (R${" "}
+              {(pricing.unitInCents / 100).toFixed(2)} cada)
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              className="ml-auto"
+              onClick={handleCreateOrder}
+              disabled={submittingOrder}
+            >
+              {submittingOrder ? "Registrando..." : "Registrar pedido manual"}
+            </Button>
+          </div>
           <div className="max-h-64 overflow-auto rounded-2xl border border-border/60 bg-background/70">
             <table className="w-full min-w-full text-left text-xs text-muted-foreground">
               <thead className="bg-muted/60 text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
