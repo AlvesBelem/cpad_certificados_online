@@ -25,7 +25,6 @@ export function LoginContent() {
   const [error, setError] = useState<string | null>(null);
 
   const actionLabel = mode === "login" ? "Entrar" : "Criar conta";
-  const endpoint = mode === "login" ? "/api/auth/sign-in/email" : "/api/auth/sign-up/email";
 
   const disabled = submitting || !email || !password || (mode === "signup" && !name);
 
