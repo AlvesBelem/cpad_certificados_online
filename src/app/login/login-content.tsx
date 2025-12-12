@@ -42,15 +42,23 @@ export function LoginContent() {
     setError(null);
 
     try {
-      const { data, error: signInError } = await authClient.signIn.email({
-        email,
-        password,
-        name: mode === "signup" ? name : undefined,
-        callbackURL: redirectTo,
-      });
+      const result =
+        mode === "signup"
+          ? await authClient.signUp.email({
+              email,
+              password,
+              name,
+              callbackURL: redirectTo,
+            })
+          : await authClient.signIn.email({
+              email,
+              password,
+              callbackURL: redirectTo,
+            });
 
-      if (signInError) {
-        throw new Error(signInError.message || "Nao foi possivel autenticar. Tente novamente.");
+      const { data, error: authError } = result;
+      if (authError) {
+        throw new Error(authError.message || "Nao foi possivel autenticar. Tente novamente.");
       }
 
       const url = data?.url || redirectTo;
