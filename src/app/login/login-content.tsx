@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2, Lock, Mail, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,6 +16,7 @@ export function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/certificados";
+  const { data: session, isPending: sessionPending } = authClient.useSession();
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -35,6 +36,12 @@ export function LoginContent() {
         : "Crie sua conta para salvar certificados, manter o carrinho e pagar pelo total em centavos.",
     [mode],
   );
+
+  useEffect(() => {
+    if (!sessionPending && session?.user) {
+      router.replace(redirectTo);
+    }
+  }, [redirectTo, router, session?.user, sessionPending]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
