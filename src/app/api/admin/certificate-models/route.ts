@@ -99,6 +99,14 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error("BLOB_READ_WRITE_TOKEN ausente.");
+      return NextResponse.json(
+        { message: "Configuração de armazenamento ausente (BLOB_READ_WRITE_TOKEN)." },
+        { status: 500 },
+      );
+    }
+
     const formData = await request.formData();
     const rawName = formData.get("name");
     const rawSlug = formData.get("slug");
@@ -182,8 +190,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Erro ao criar modelo:", error);
-    return NextResponse.json({ message: "Nao foi possivel criar o modelo." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("Erro ao criar modelo:", message, error);
+    return NextResponse.json({ message: `Nao foi possivel criar o modelo: ${message}` }, { status: 500 });
   }
 }
 
@@ -194,6 +203,14 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
+    if (!process.env.BLOB_READ_WRITE_TOKEN) {
+      console.error("BLOB_READ_WRITE_TOKEN ausente.");
+      return NextResponse.json(
+        { message: "Configuração de armazenamento ausente (BLOB_READ_WRITE_TOKEN)." },
+        { status: 500 },
+      );
+    }
+
     const formData = await request.formData();
     const modelId = formData.get("modelId");
     const tenantSlug = resolveTenantSlug(formData.get("tenant"));
@@ -241,8 +258,9 @@ export async function PATCH(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error("Erro ao atualizar modelo:", error);
-    return NextResponse.json({ message: "Nao foi possivel atualizar o modelo." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("Erro ao atualizar modelo:", message, error);
+    return NextResponse.json({ message: `Nao foi possivel atualizar o modelo: ${message}` }, { status: 500 });
   }
 }
 
@@ -281,7 +299,8 @@ export async function DELETE(request: NextRequest) {
 
     return NextResponse.json({ success: true, id: existing.id });
   } catch (error) {
-    console.error("Erro ao remover modelo:", error);
-    return NextResponse.json({ message: "Nao foi possivel remover o modelo." }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error("Erro ao remover modelo:", message, error);
+    return NextResponse.json({ message: `Nao foi possivel remover o modelo: ${message}` }, { status: 500 });
   }
 }
