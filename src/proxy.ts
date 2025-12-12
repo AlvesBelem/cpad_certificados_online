@@ -19,6 +19,15 @@ function isIgnoredPath(pathname: string) {
   );
 }
 
+const SESSION_COOKIE_NAMES = [
+  "better-auth.session_token",
+  "better-auth.session-token",
+  "__Secure-better-auth.session_token",
+  "__Secure-better-auth.session-token",
+  "__Host-better-auth.session_token",
+  "__Host-better-auth.session-token",
+];
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;
 
@@ -26,8 +35,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const hasSessionCookie =
-    request.cookies.has("better-auth.session_token") || request.cookies.has("better-auth.session-token");
+  const hasSessionCookie = SESSION_COOKIE_NAMES.some((name) => request.cookies.has(name));
   if (hasSessionCookie) {
     return NextResponse.next();
   }
