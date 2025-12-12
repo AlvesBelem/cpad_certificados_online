@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { ArrowRight, CheckCircle2, Loader2, Lock, Mail, Sparkles } from "lucide-react";
+import { ArrowRight, CheckCircle2, Loader2, Lock, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -69,12 +69,7 @@ export function LoginContent() {
       }
 
       await refetchSession();
-      const maybeUrl =
-        data && typeof data === "object" && "url" in data && typeof (data as { url?: unknown }).url === "string"
-          ? (data as { url: string }).url
-          : null;
-
-      router.replace(maybeUrl || redirectTo);
+      router.replace(redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar.");
     } finally {
