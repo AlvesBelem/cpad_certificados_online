@@ -63,7 +63,7 @@ export function LoginContent() {
               callbackURL: redirectTo,
             });
 
-      const { data, error: authError } = result;
+      const { error: authError } = result;
       if (authError) {
         throw new Error(authError.message || "Nao foi possivel autenticar. Tente novamente.");
       }
