@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { authClient } from "@/lib/auth-client";
 
 type Mode = "login" | "signup";
 
@@ -42,26 +43,19 @@ export function LoginContent() {
     setError(null);
 
     try {
-      const response = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          password,
-          name: mode === "signup" ? name : undefined,
-          callbackURL: redirectTo,
-        }),
+      const { data, error: signInError } = await authClient.signIn.email({
+        email,
+        password,
+        name: mode === "signup" ? name : undefined,
+        callbackURL: redirectTo,
       });
 
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const message = payload?.message || "Nao foi possivel autenticar. Tente novamente.";
-        throw new Error(message);
+      if (signInError) {
+        throw new Error(signInError.message || "Nao foi possivel autenticar. Tente novamente.");
       }
 
-      router.push(redirectTo);
+      const url = data?.url || redirectTo;
+      router.push(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar.");
     } finally {
@@ -69,9 +63,26 @@ export function LoginContent() {
     }
   }
 
-  function handleGoogle() {
-    const url = `/api/auth/sign-in/social/google?redirect=${encodeURIComponent(redirectTo)}`;
-    window.location.href = url;
+  async function handleGoogle() {
+    setSubmitting(true);
+    setError(null);
+    try {
+      const { data, error: signInError } = await authClient.signIn.social({
+        provider: "google",
+        callbackURL: redirectTo,
+      });
+      if (signInError) {
+        throw new Error(signInError.message || "Nao foi possivel autenticar com Google.");
+      }
+      if (data?.url) {
+        window.location.href = data.url;
+      } else {
+        router.push(redirectTo);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao autenticar com Google.");
+      setSubmitting(false);
+    }
   }
 
   return (
