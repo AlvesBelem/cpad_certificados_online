@@ -15,11 +15,16 @@ function isFile(value: FormDataEntryValue | null): value is File {
   return value instanceof File && value.size > 0;
 }
 
-async function persistFile(file: File, subFolder: string) {
+function resolveTenantSlug(raw: FormDataEntryValue | null) {
+  const rawValue = typeof raw === "string" ? raw.trim() : "";
+  return rawValue ? slugify(rawValue) : "default";
+}
+
+async function persistFile(file: File, subFolder: string, tenantSlug: string) {
   const arrayBuffer = await file.arrayBuffer();
   let buffer = Buffer.from(arrayBuffer) as BinaryBuffer;
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", subFolder);
+  const uploadDir = path.join(process.cwd(), "public", "uploads", "tenants", tenantSlug, subFolder);
   await fs.mkdir(uploadDir, { recursive: true });
 
   const extensionFromName = path.extname(file.name) || "";
@@ -41,7 +46,7 @@ async function persistFile(file: File, subFolder: string) {
   const filePath = path.join(uploadDir, fileName);
   await fs.writeFile(filePath, buffer);
 
-  return `/uploads/${subFolder}/${fileName}`;
+  return `/uploads/tenants/${tenantSlug}/${subFolder}/${fileName}`;
 }
 
 async function deleteStaticFile(filePath: string | null | undefined) {
@@ -130,6 +135,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ message: "Ja existe um modelo com esse slug." }, { status: 409 });
     }
 
+    const tenantSlug = resolveTenantSlug(formData.get("tenant"));
+
     const previewFile = isFile(formData.get("previewImage")) ? (formData.get("previewImage") as File) : null;
     const backgroundFile = isFile(formData.get("backgroundImage"))
       ? (formData.get("backgroundImage") as File)
@@ -145,10 +152,10 @@ export async function POST(request: NextRequest) {
 
     const uploadsDir = "models";
     const [previewImage, backgroundImage, topBorderImage, bottomBorderImage] = await Promise.all([
-      previewFile ? persistFile(previewFile, uploadsDir) : Promise.resolve<string | null>(null),
-      backgroundFile ? persistFile(backgroundFile, uploadsDir) : Promise.resolve<string | null>(null),
-      topBorderFile ? persistFile(topBorderFile, uploadsDir) : Promise.resolve<string | null>(null),
-      bottomBorderFile ? persistFile(bottomBorderFile, uploadsDir) : Promise.resolve<string | null>(null),
+      previewFile ? persistFile(previewFile, uploadsDir, tenantSlug) : Promise.resolve<string | null>(null),
+      backgroundFile ? persistFile(backgroundFile, uploadsDir, tenantSlug) : Promise.resolve<string | null>(null),
+      topBorderFile ? persistFile(topBorderFile, uploadsDir, tenantSlug) : Promise.resolve<string | null>(null),
+      bottomBorderFile ? persistFile(bottomBorderFile, uploadsDir, tenantSlug) : Promise.resolve<string | null>(null),
     ]);
 
     const model = await prisma.certificateModel.create({
@@ -188,6 +195,7 @@ export async function PATCH(request: NextRequest) {
   try {
     const formData = await request.formData();
     const modelId = formData.get("modelId");
+    const tenantSlug = resolveTenantSlug(formData.get("tenant"));
     const backgroundFile = isFile(formData.get("backgroundImage"))
       ? (formData.get("backgroundImage") as File)
       : null;
@@ -209,7 +217,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const uploadsDir = "models";
-    const newBackgroundImage = await persistFile(backgroundFile, uploadsDir);
+    const newBackgroundImage = await persistFile(backgroundFile, uploadsDir, tenantSlug);
 
     const model = await prisma.certificateModel.update({
       where: { id: existing.id },

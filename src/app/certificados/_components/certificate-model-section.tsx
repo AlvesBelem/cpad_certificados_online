@@ -13,7 +13,14 @@ type CertificateModelSectionProps = {
   children: ReactNode;
 };
 
-const FALLBACK_PREVIEW = "/certificado-default.png";
+const FALLBACK_PREVIEW = `data:image/svg+xml;utf8,${encodeURIComponent(
+  `<svg width="320" height="240" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100%" height="100%" fill="#E5E7EB" rx="16"/>
+    <text x="50%" y="50%" text-anchor="middle" font-size="18" font-family="sans-serif" fill="#94A3B8">
+      Prévia indisponível
+    </text>
+  </svg>`,
+)}`;
 
 export function CertificateModelSection({ certificateSlug, defaultPreview, children }: CertificateModelSectionProps) {
   const defaultOption = {
@@ -50,19 +57,20 @@ export function CertificateModelSection({ certificateSlug, defaultPreview, child
                 disabled={isLoading}
               >
                 <div className="relative h-32 w-full overflow-hidden rounded-xl border border-border/60 bg-muted">
-                  {option.previewImage ? (
-                    <Image
-                      src={option.previewImage}
-                      alt={`Prévia ${option.name}`}
-                      fill
-                      sizes="320px"
-                      className="object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
-                      Sem prévia
-                    </div>
-                  )}
+                  <Image
+                    src={option.previewImage || FALLBACK_PREVIEW}
+                    alt={`Pr?via ${option.name}`}
+                    fill
+                    sizes="320px"
+                    className="object-cover"
+                    unoptimized
+                    onError={(event) => {
+                      const target = event.currentTarget as HTMLImageElement;
+                      if (target.src !== FALLBACK_PREVIEW) {
+                        target.src = FALLBACK_PREVIEW;
+                      }
+                    }}
+                  />
                 </div>
                 <div className="text-left">
                   <p className="text-sm font-semibold text-foreground">{option.name}</p>

@@ -12,7 +12,7 @@ import { resolveBulkFields } from "@/components/certificates/bulk-import-fields"
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 
-const DEFAULT_LOGO = "/igreja.png";
+const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE = "\"Ensina-me, SENHOR, o caminho dos teus estatutos.\" Salmo 119:33";
 const SIGNATURE_LINE = "________________";
 
@@ -288,7 +288,7 @@ export function DiscipuladoCertificateBuilder({ igrejaNome, logoPath, logoUrl }:
 
       <CertificatePreview
         certificateRef={certificateRef}
-        mobileImage="/certificado_discipulado.png"
+        mobileImage="/certificates/discipulado/certificado_discipulado.jpg"
         mobileAlt="Prévia do certificado de discipulado"
         frameColor="#f3e7d8"
       >

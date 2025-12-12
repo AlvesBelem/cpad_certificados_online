@@ -13,7 +13,7 @@ import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
-const DEFAULT_LOGO = "/igreja.png";
+const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE =
   "\"Terminados os dias da purificação, segundo a lei de Moisés, levaram-no a Jerusalém, para apresentá-lo ao Senhor.\" Lucas 2:22";
 const SIGNATURE_LINE = "________________________";
@@ -93,7 +93,7 @@ function CertificateInner({
       {showDefaultWatermark ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <Image
-            src="/menino.png"
+            src="/assets/backgrounds/apresentacao-menino/menino.png"
             alt="Marca d'água de menino"
             width={600}
             height={1024}
@@ -326,7 +326,7 @@ export function ApresentacaoMeninoCertificateBuilder({ igrejaNome, logoPath, log
 
       <CertificatePreview
         certificateRef={certificateRef}
-        mobileImage="/certificado_menino.png"
+        mobileImage="/certificates/apresentacao-menino/certificado_menino.jpg"
         mobileAlt="Prévia do certificado de apresentação do menino"
         frameColor="#dbeafe"
       >

@@ -8,16 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const certificatePreviews = [
-  { title: "Batismo", href: "/certificados/batismo", image: "/certificado_batismo.jpg" },
-  { title: "EBD", href: "/certificados/ebd", image: "/certificado_ebd_trimestre.jpg" },
-  { title: "Discipulado", href: "/certificados/discipulado", image: "/certificado_discipulado.jpg" },
-  { title: "Apresentação Menina", href: "/certificados/apresentacao-menina", image: "/certificado_menina.jpg" },
-  { title: "Apresentação Menino", href: "/certificados/apresentacao-menino", image: "/certificado_menino.jpg" },
-  { title: "Casamento", href: "/certificados/casamento", image: "/certificado_casamento.jpg" },
-  { title: "EBD Anual", href: "/certificados/ebd-anual", image: "/certificado_ebd_anual.jpg" },
-  { title: "Ordenação Pastoral", href: "/certificados/ordenacao-pastoral", image: "/certificado_ordenacao.jpg" },
-  { title: "Dizimista Fiel", href: "/certificados/dizimista-fiel", image: "/certificado_dizimista.jpg" },
-  { title: "Encontro de Casais", href: "/certificados/encontro-casais", image: "/certificado_casais.jpg" },
+  { title: "Batismo", href: "/certificados/batismo", image: "/certificates/batismo/certificado_batismo.jpg" },
+  { title: "EBD", href: "/certificados/ebd", image: "/certificates/ebd/certificado_ebd_trimestre.jpg" },
+  { title: "Discipulado", href: "/certificados/discipulado", image: "/certificates/discipulado/certificado_discipulado.jpg" },
+  { title: "Apresenta???o Menina", href: "/certificados/apresentacao-menina", image: "/certificates/apresentacao-menina/certificado_menina.jpg" },
+  { title: "Apresenta???o Menino", href: "/certificados/apresentacao-menino", image: "/certificates/apresentacao-menino/certificado_menino.jpg" },
+  { title: "Casamento", href: "/certificados/casamento", image: "/certificates/casamento/certificado_casamento.jpg" },
+  { title: "EBD Anual", href: "/certificados/ebd-anual", image: "/certificates/ebd-anual/certificado_ebd_anual.jpg" },
+  { title: "Ordena???o Pastoral", href: "/certificados/ordenacao-pastoral", image: "/certificates/ordenacao-pastoral/certificado_ordenacao.jpg" },
+  { title: "Dizimista Fiel", href: "/certificados/dizimista-fiel", image: "/certificates/dizimista-fiel/certificado_dizimista.jpg" },
+  { title: "Encontro de Casais", href: "/certificados/encontro-casais", image: "/certificates/encontro-casais/certificado_casais.jpg" },
 ];
 
 const steps = [
@@ -183,7 +183,7 @@ function TemplateGrid() {
           style={{ transform: `translateX(-${currentIndex * 100}%)` }}
         >
           {certificatePreviews.map((item) => {
-            const imageSrc = item.image || "/certificado_batismo.png";
+            const imageSrc = item.image || "/certificates/batismo/certificado_batismo.jpg";
             return (
               <Link
                 key={item.title}

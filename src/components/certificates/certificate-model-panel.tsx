@@ -108,11 +108,12 @@ export function CertificateModelController({ children }: CertificateModelControl
                       <div className="relative h-28 w-full overflow-hidden rounded-lg border border-border/60 bg-muted">
                         <Image
                           src={option.previewImage || option.backgroundImage || PLACEHOLDER_PREVIEW}
-                          alt={`Prévia ${option.name}`}
+                          alt={`Pr?via ${option.name}`}
                           fill
                           sizes="200px"
                           className="object-cover"
                           priority={false}
+                          unoptimized
                           onError={(event) => {
                             const target = event.currentTarget as HTMLImageElement;
                             if (target.src !== PLACEHOLDER_PREVIEW) {

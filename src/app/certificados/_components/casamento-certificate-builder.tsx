@@ -13,7 +13,7 @@ import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
-const DEFAULT_LOGO = "/igreja.png";
+const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE =
   "\"Por isso, deixará o homem a seu pai e a sua mãe, e unir-se-á a sua mulher; e serão ambos uma só carne.\" Gênesis 2:24";
 const SIGNATURE_LINE = "________________________";
@@ -77,11 +77,11 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataFormatada }: Certif
         {showDefaultWatermark ? (
           <>
             <div className="pointer-events-none absolute inset-0 opacity-15">
-              <Image src="/fundo_casamento.svg" alt="" fill className="object-cover" priority />
+                <Image src="/certificates/casamento/fundo_casamento.svg" alt="" fill className="object-cover" priority />
             </div>
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-              <Image
-                src="/alianca.png"
+                <Image
+                  src="/certificates/casamento/alianca.png"
                 alt="Marca d'água de alianças"
                 width={650}
                 height={1024}
@@ -282,7 +282,7 @@ export function CasamentoCertificateBuilder({ igrejaNome, logoPath, logoUrl }: B
 
       <CertificatePreview
         certificateRef={certificateRef}
-        mobileImage="/certificado_casamento.png"
+        mobileImage="/certificates/casamento/certificado_casamento.jpg"
         mobileAlt="Prévia do certificado de casamento"
         allowOverflow
         autoHeight

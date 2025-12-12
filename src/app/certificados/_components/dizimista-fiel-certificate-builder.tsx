@@ -12,7 +12,7 @@ import { resolveBulkFields } from "@/components/certificates/bulk-import-fields"
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 
-const DEFAULT_LOGO = "/igreja.png";
+const DEFAULT_LOGO = "/assets/logos/igreja.png";
 
 const DEFAULT_VERSE =
   "\"Trazei todos os Dízimos à casa do Tesouro, e provai-me nisto, diz o Senhor dos Exércitos, se eu não abrir as janelas do céu, e não derramar sobre vós bênção sem medida.\" Malaquias 3:10,11";

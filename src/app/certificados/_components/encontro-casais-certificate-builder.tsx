@@ -13,7 +13,7 @@ import { resolveBulkFields } from "@/components/certificates/bulk-import-fields"
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
-const DEFAULT_LOGO = "/igreja.png";
+const DEFAULT_LOGO = "/assets/logos/igreja.png";
 
 const DEFAULT_VERSE =
   "\"E sobre tudo isto, revesti-vos de amor, que é o vínculo da perfeição.\" Colossenses 3:14";
@@ -82,7 +82,7 @@ function CertificateInner({ igrejaNome, campos, dataConclusaoFormatada, logoSrc 
       {showDefaultWatermark ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <Image
-            src="/alianca.png"
+            src="/certificates/casamento/alianca.png"
             alt="Marca d'água de alianças"
             width={650}
             height={1024}

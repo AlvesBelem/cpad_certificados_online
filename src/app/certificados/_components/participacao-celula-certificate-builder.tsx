@@ -12,7 +12,7 @@ import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
-const DEFAULT_LOGO = "/igreja.png";
+const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE = "\"Oh! quão bom e quão suave é que os irmãos vivam em união.\" Salmos 133:1";
 const SIGNATURE_LINE = "_____________________________";
 

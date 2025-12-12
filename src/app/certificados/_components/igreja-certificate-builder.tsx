@@ -16,7 +16,7 @@ import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
-const DEFAULT_LOGO = "/igreja.png";
+const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE = "\"Portanto ide, fazei discípulos de todas as nações, batizando-os em nome do Pai, e do Filho, e do Espírito Santo.\" Mateus 28:19";
 const SIGNATURE_LINE = "________________________";
 
@@ -73,7 +73,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataFormatada }: Certif
       {showDefaultWatermark ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <Image
-            src="/batismo.png"
+            src="/certificates/batismo/batismo.png"
             alt="Marca d'água de batismo"
             width={650}
             height={1024}
@@ -321,7 +321,7 @@ export function IgrejaCertificateBuilder({
       {/* Certificate preview */}
       <CertificatePreview
         certificateRef={certificateRef}
-        mobileImage="/certificado_batismo.png"
+        mobileImage="/certificates/batismo/certificado_batismo.jpg"
         mobileAlt="Prévia do certificado de batismo"
         frameColor="#ecfccb"
       >

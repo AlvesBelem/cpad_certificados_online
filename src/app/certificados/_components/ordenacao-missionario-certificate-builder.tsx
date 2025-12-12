@@ -12,7 +12,7 @@ import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
-const DEFAULT_LOGO = "/igreja.png";
+const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE =
   "\"Mas importa que primeiro o evangelho seja pregado entre todas as nações.\" Marcos 13:10";
 const SIGNATURE_LINE = "_____________________________";
