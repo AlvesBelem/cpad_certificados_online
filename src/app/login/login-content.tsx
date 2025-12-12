@@ -32,7 +32,7 @@ export function LoginContent() {
   const authDescription = useMemo(
     () =>
       mode === "login"
-        ? "Acesse com email e senha ou continue com o Google para salvar certificados no carrinho."
+        ? "Acesse com email e senha para salvar certificados no carrinho."
         : "Crie sua conta para salvar certificados, manter o carrinho e pagar pelo total em centavos.",
     [mode],
   );
@@ -82,29 +82,6 @@ export function LoginContent() {
     }
   }
 
-  async function handleGoogle() {
-    setSubmitting(true);
-    setError(null);
-    try {
-      const { data, error: signInError } = await authClient.signIn.social({
-        provider: "google",
-        callbackURL: redirectTo,
-      });
-      if (signInError) {
-        throw new Error(signInError.message || "Nao foi possivel autenticar com Google.");
-      }
-      await refetchSession();
-      if (data?.url) {
-        window.location.href = data.url;
-      } else {
-        router.replace(redirectTo);
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao autenticar com Google.");
-      setSubmitting(false);
-    }
-  }
-
   return (
     <main className="mx-auto flex min-h-[80vh] w-full max-w-5xl flex-col gap-10 px-6 py-12 md:px-10 lg:px-16">
       <header className="space-y-2">
@@ -118,7 +95,7 @@ export function LoginContent() {
           <CardHeader className="space-y-1">
             <CardTitle>{actionLabel}</CardTitle>
             <CardDescription>
-              Autenticacao com Better Auth. Email/senha e Google. Banco em memoria e Prisma como ORM.
+              Autenticacao com Better Auth apenas com email e senha. Banco em memoria e Prisma como ORM.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -202,17 +179,6 @@ export function LoginContent() {
                 )}
               </Button>
             </form>
-
-            <div className="flex items-center gap-2">
-              <span className="h-px flex-1 bg-border" aria-hidden />
-              <span className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Ou</span>
-              <span className="h-px flex-1 bg-border" aria-hidden />
-            </div>
-
-            <Button type="button" variant="outline" className="w-full" onClick={handleGoogle}>
-              <Sparkles className="mr-2 h-4 w-4" />
-              Continuar com Google
-            </Button>
           </CardContent>
         </Card>
 

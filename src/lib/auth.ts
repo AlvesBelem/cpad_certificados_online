@@ -1,25 +1,11 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { jwt } from "better-auth/plugins";
-import type { SocialProviders } from "@better-auth/core/social-providers";
 import { getAppUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
 import { normalizeRole } from "@/lib/roles";
 
 const appUrl = getAppUrl();
-
-const googleClientId = process.env.GOOGLE_CLIENT_ID;
-const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;
-
-const socialProviders: SocialProviders | undefined =
-  googleClientId && googleClientSecret
-    ? {
-        google: {
-          clientId: googleClientId,
-          clientSecret: googleClientSecret,
-        },
-      }
-    : undefined;
 
 export const auth = betterAuth({
   appName: "AdiGreja",
@@ -30,7 +16,6 @@ export const auth = betterAuth({
     enabled: true,
     autoSignIn: true,
   },
-  socialProviders,
   user: {
     additionalFields: {
       role: {
@@ -90,7 +75,7 @@ export const auth = betterAuth({
               ...user,
               igrejaId: igreja.id,
               igrejaStatus: igreja.status,
-              role: "ADMIN", // Primeiro usuário via social deve ser ADMIN
+              role: "ADMIN", // Primeiro usuario criado vira ADMIN
             },
           };
         },
