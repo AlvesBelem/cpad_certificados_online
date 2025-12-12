@@ -294,7 +294,7 @@ const STATUS_LABEL: Record<string, string> = {
 };
 
 function formatStatus(status: string) {
-  return STATUS_LABEL[status] ?? status || "Indefinido";
+  return (STATUS_LABEL[status] ?? status) || "Indefinido";
 }
 
 function SalesSection({ orders }: SalesSectionProps) {
