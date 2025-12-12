@@ -8,6 +8,7 @@ import type {
   AdminDashboardData,
   DashboardModel,
   DashboardUser,
+  OrderSummary,
   PaymentBreakdown,
   ReportRow,
 } from "@/lib/admin-dashboard";
@@ -61,6 +62,7 @@ export function AdminDashboard({ data, adminName }: AdminDashboardProps) {
   const [clients, setClients] = useState<DashboardUser[]>(data.clients);
   const [employees, setEmployees] = useState<DashboardUser[]>(data.employees);
   const [models, setModels] = useState<DashboardModel[]>(data.models);
+  const [orders] = useState<OrderSummary[]>(data.orders);
   const [activeSection, setActiveSection] = useState("overview");
   const [isCreateEmployeeOpen, setIsCreateEmployeeOpen] = useState(false);
 
@@ -121,6 +123,7 @@ export function AdminDashboard({ data, adminName }: AdminDashboardProps) {
 
   const sidebarItems = [
     { id: "overview", label: "Resumo" },
+    { id: "sales", label: "Vendas" },
     { id: "payments", label: "Pagamentos" },
     { id: "reports", label: "Relatórios" },
     { id: "clients", label: "Clientes" },
@@ -130,6 +133,8 @@ export function AdminDashboard({ data, adminName }: AdminDashboardProps) {
 
   function renderSection() {
     switch (activeSection) {
+      case "sales":
+        return <SalesSection orders={orders} />;
       case "payments":
         return <PaymentBreakdownCard items={data.paymentBreakdown} />;
       case "reports":

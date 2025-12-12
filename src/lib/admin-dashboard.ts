@@ -49,9 +49,20 @@ export type AdminDashboardData = {
   };
   paymentBreakdown: PaymentBreakdown[];
   reports: ReportRow[];
+  orders: OrderSummary[];
   clients: DashboardUser[];
   employees: DashboardUser[];
   models: DashboardModel[];
+};
+
+export type OrderSummary = {
+  id: string;
+  paymentMethod: string;
+  status: string;
+  totalAmount: number;
+  quantity: number;
+  createdAt: string;
+  customerEmail: string | null;
 };
 
 type UserWithRole = {
@@ -78,8 +89,8 @@ function formatUser(user: UserWithRole): DashboardUser {
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   const [orders, models, clients, employees] = await Promise.all([
     prisma.certificateOrder.findMany({
-      where: { status: "PAID" },
       orderBy: { createdAt: "desc" },
+      include: { customer: { select: { email: true } } },
     }),
     prisma.certificateModel.findMany({
       orderBy: { createdAt: "desc" },
@@ -94,12 +105,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     }),
   ]);
 
-  const totalRevenue = orders.reduce((total, order) => total + order.totalAmountInCents / 100, 0);
-  const totalCertificates = orders.reduce((total, order) => total + order.quantity, 0);
-  const averageTicket = orders.length ? totalRevenue / orders.length : 0;
+  const paidOrders = orders.filter((order) => order.status === "PAID");
+  const totalRevenue = paidOrders.reduce((total, order) => total + order.totalAmountInCents / 100, 0);
+  const totalCertificates = paidOrders.reduce((total, order) => total + order.quantity, 0);
+  const averageTicket = paidOrders.length ? totalRevenue / paidOrders.length : 0;
 
   const paymentMap = new Map<string, PaymentBreakdown>();
-  orders.forEach((order) => {
+  paidOrders.forEach((order) => {
     const method = order.paymentMethod || "INDIFERENTE";
     const entry = paymentMap.get(method) ?? {
       method,
@@ -123,7 +135,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     }
   >();
 
-  orders.forEach((order) => {
+  paidOrders.forEach((order) => {
     const year = order.createdAt.getFullYear();
     const month = order.createdAt.getMonth();
     const key = `${year}-${month}`;
@@ -161,6 +173,15 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     },
     paymentBreakdown: Array.from(paymentMap.values()).sort((a, b) => b.totalRevenue - a.totalRevenue),
     reports,
+    orders: orders.map((order) => ({
+      id: order.id,
+      paymentMethod: order.paymentMethod,
+      status: order.status,
+      totalAmount: order.totalAmountInCents / 100,
+      quantity: order.quantity,
+      createdAt: order.createdAt.toISOString(),
+      customerEmail: order.customer?.email ?? null,
+    })),
     clients: clients.map(formatUser),
     employees: employees.map(formatUser),
     models: models.map((model) => ({
