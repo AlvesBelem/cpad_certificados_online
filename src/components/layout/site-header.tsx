@@ -91,7 +91,10 @@ export function SiteHeader() {
           </Button>
           {user ? (
             <div className="flex items-center gap-3 rounded-full border border-border/70 bg-card/70 px-3 py-1">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary" aria-hidden>
+              <div
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary"
+                aria-hidden
+              >
                 {initials || "US"}
               </div>
               <div className="flex flex-col text-left">
@@ -109,11 +112,7 @@ export function SiteHeader() {
                 {signingOut ? "Saindo..." : "Sair"}
               </Button>
             </div>
-          ) : (
-            <Button asChild size="sm">
-              <Link href="/login">Entrar</Link>
-            </Button>
-          )}
+          ) : null}
         </div>
       </div>
     </header>
