@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { Worksheet } from "exceljs";
 import { toast } from "sonner";
 import { Download, Upload } from "lucide-react";
@@ -21,11 +21,12 @@ type Props = {
   certificateSlug?: string;
   fields: BulkImportField[];
   onApplyRow: (row: Record<string, string>) => void;
+  onRowsChange?: (rows: ParsedRow[]) => void;
 };
 
-type ParsedRow = Record<string, string>;
+export type ParsedRow = Record<string, string>;
 
-export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onApplyRow }: Props) {
+export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onApplyRow, onRowsChange }: Props) {
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
   const [parsing, setParsing] = useState(false);
@@ -58,13 +59,14 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
     downloadWorkbook(buffer, templateFileName);
   };
 
-  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     setParsing(true);
     setError(null);
     setRows([]);
+    onRowsChange?.([]);
 
     try {
       const workbook = await loadWorkbookFromFile(file);
@@ -74,7 +76,7 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
       }
       const rawRows = extractRowsFromWorksheet(firstSheet);
       if (!rawRows.length) {
-        throw new Error("Não encontramos linhas na planilha enviada.");
+        throw new Error("Nao encontramos linhas na planilha enviada.");
       }
       const headers = rawRows[0].map((cell) => normalizeValue(String(cell)));
       const dataRows = rawRows.slice(1);
@@ -87,10 +89,11 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
       }
 
       setRows(parsed);
+      onRowsChange?.(parsed);
       setFileName(file.name);
       toast.success(`Importamos ${parsed.length} linha(s) da planilha.`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Não foi possível ler a planilha enviada.";
+      const message = err instanceof Error ? err.message : "Nao foi possivel ler a planilha enviada.";
       setError(message);
     } finally {
       setParsing(false);
@@ -102,11 +105,12 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
 
   const applyRow = (row: ParsedRow) => {
     onApplyRow(row);
-    toast.success("Dados aplicados ao formulário. Revise antes de gerar o certificado.");
+    toast.success("Dados aplicados ao formulario. Revise antes de gerar o certificado.");
   };
 
   const clearRows = () => {
     setRows([]);
+    onRowsChange?.([]);
     setFileName(null);
     setError(null);
     if (inputRef.current) {
@@ -120,10 +124,10 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
     <section className="rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary/70">Importação em massa</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary/70">Importacao em massa</p>
           <h3 className="text-base font-semibold text-foreground">Planilha Excel</h3>
           <p className="text-xs text-muted-foreground">
-            Baixe o modelo, preencha as colunas e importe para aplicar rapidamente cada linha ao formulário do certificado.
+            Baixe o modelo, preencha as colunas e importe para aplicar rapidamente cada linha ao formulario do certificado.
           </p>
         </div>
         <Button type="button" size="sm" variant="outline" onClick={handleDownloadTemplate}>
@@ -163,7 +167,7 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
         <div className="mt-4 space-y-3">
           <p className="text-xs text-muted-foreground">
             Encontramos <span className="font-semibold text-foreground">{rows.length}</span>{" "}
-            {rows.length === 1 ? "linha" : "linhas"}. Clique em &ldquo;Aplicar&rdquo; para preencher o formulário com os dados
+            {rows.length === 1 ? "linha" : "linhas"}. Clique em &ldquo;Aplicar&rdquo; para preencher o formulario com os dados
             de cada participante.
           </p>
           <div className="max-h-64 overflow-auto rounded-2xl border border-border/60 bg-background/70">
@@ -175,7 +179,7 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
                       {field.label}
                     </th>
                   ))}
-                  <th className="px-3 py-2 font-semibold text-foreground">Ações</th>
+                  <th className="px-3 py-2 font-semibold text-foreground">Acoes</th>
                 </tr>
               </thead>
               <tbody>
@@ -198,7 +202,7 @@ export function BulkImportPanel({ certificateTitle, certificateSlug, fields, onA
           </div>
           {rows.length > previewRows.length ? (
             <p className="text-[11px] text-muted-foreground">
-              Mostrando {previewRows.length} linhas de {rows.length}. Continue importando linha por linha usando o botão aplicar.
+              Mostrando {previewRows.length} linhas de {rows.length}. Continue importando linha por linha usando o botao aplicar.
             </p>
           ) : null}
         </div>
@@ -239,10 +243,10 @@ async function loadWorkbookFromFile(file: File) {
   }
 
   if (extension === "xls") {
-    throw new Error("Arquivos .xls não são suportados. Salve o arquivo como .xlsx ou .csv.");
+    throw new Error("Arquivos .xls nao sao suportados. Salve o arquivo como .xlsx ou .csv.");
   }
 
-  throw new Error("Formato de arquivo não suportado. Envie um .xlsx ou .csv.");
+  throw new Error("Formato de arquivo nao suportado. Envie um .xlsx ou .csv.");
 }
 
 function extractRowsFromWorksheet(worksheet: Worksheet) {
@@ -267,7 +271,11 @@ function extractRowsFromWorksheet(worksheet: Worksheet) {
 
 function formatCellValue(value: unknown): string {
   if (value === null || value === undefined) return "";
-  if (value instanceof Date) return value.toISOString();
+
+  if (value instanceof Date) {
+    const iso = value.toISOString();
+    return iso.includes("T") ? iso.slice(0, 10) : iso;
+  }
 
   if (typeof value === "object") {
     const cell = value as { result?: unknown; text?: string; richText?: Array<{ text?: string }> };
@@ -278,11 +286,20 @@ function formatCellValue(value: unknown): string {
       return cell.richText.map((segment) => segment.text ?? "").join("");
     }
     if (cell.text !== undefined) {
-      return String(cell.text);
+      return cleanDateString(String(cell.text));
     }
   }
 
-  return String(value);
+  return cleanDateString(String(value));
+}
+
+function cleanDateString(text: string) {
+  const trimmed = text.trim();
+  const isoWithTimeMatch = trimmed.match(/^(\d{4}-\d{2}-\d{2})T/);
+  if (isoWithTimeMatch) {
+    return isoWithTimeMatch[1];
+  }
+  return trimmed;
 }
 
 function getFileExtension(fileName: string) {
@@ -343,7 +360,6 @@ function parseCsv(text: string) {
     currentCell += char;
   }
 
-  // push last cell/row
   if (currentCell.length > 0 || currentRow.length > 0) {
     currentRow.push(currentCell);
   }
