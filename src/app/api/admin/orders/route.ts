@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { normalizeRole, UserRole } from "@/lib/roles";
 import { requireSessionForAction } from "@/lib/session";
 
 const createOrderSchema = z.object({
@@ -15,9 +14,6 @@ const createOrderSchema = z.object({
 
 export async function POST(request: NextRequest) {
   const session = await requireSessionForAction();
-  if (normalizeRole(session.user.role) !== UserRole.ADMIN) {
-    return NextResponse.json({ message: "Acesso negado." }, { status: 403 });
-  }
 
   try {
     const body = await request.json();
@@ -30,7 +26,7 @@ export async function POST(request: NextRequest) {
         quantity: parsed.quantity,
         totalAmountInCents: parsed.totalAmountInCents,
         notes: parsed.notes,
-        customerId: parsed.customerId ?? null,
+        customerId: parsed.customerId ?? session.user.id ?? null,
       },
       include: {
         customer: { select: { email: true } },
