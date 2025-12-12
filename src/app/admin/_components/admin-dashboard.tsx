@@ -282,6 +282,227 @@ export function AdminDashboard({ data, adminName }: AdminDashboardProps) {
   );
 }
 
+type SalesSectionProps = {
+  orders: OrderSummary[];
+};
+
+const STATUS_LABEL: Record<string, string> = {
+  PAID: "Pago",
+  PENDING: "Pendente",
+  CANCELED: "Cancelado",
+  FAILED: "Falhou",
+};
+
+function formatStatus(status: string) {
+  return STATUS_LABEL[status] ?? status || "Indefinido";
+}
+
+function SalesSection({ orders }: SalesSectionProps) {
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [periodFilter, setPeriodFilter] = useState<string>("90");
+  const [methodFilter, setMethodFilter] = useState<string>("all");
+
+  const paymentOptions = useMemo(() => {
+    const methods = Array.from(new Set(orders.map((order) => order.paymentMethod || "indiferente")));
+    return ["all", ...methods];
+  }, [orders]);
+
+  const filteredOrders = useMemo(() => {
+    const now = Date.now();
+    const maxAgeDays = periodFilter === "all" ? null : Number(periodFilter);
+
+    return orders.filter((order) => {
+      if (statusFilter !== "all" && order.status !== statusFilter) return false;
+      if (methodFilter !== "all" && (order.paymentMethod || "indiferente") !== methodFilter) return false;
+      if (maxAgeDays) {
+        const orderTime = new Date(order.createdAt).getTime();
+        const diffDays = (now - orderTime) / (1000 * 60 * 60 * 24);
+        if (diffDays > maxAgeDays) return false;
+      }
+      return true;
+    });
+  }, [methodFilter, orders, periodFilter, statusFilter]);
+
+  const paidFiltered = filteredOrders.filter((order) => order.status === "PAID");
+  const revenue = paidFiltered.reduce((sum, order) => sum + order.totalAmount, 0);
+  const certificates = paidFiltered.reduce((sum, order) => sum + order.quantity, 0);
+  const ordersCount = filteredOrders.length;
+  const avgTicket = paidFiltered.length ? revenue / paidFiltered.length : 0;
+
+  const breakdownMap = new Map<string, PaymentBreakdown>();
+  paidFiltered.forEach((order) => {
+    const method = order.paymentMethod || "indiferente";
+    const entry = breakdownMap.get(method) ?? { method, totalRevenue: 0, orders: 0, certificates: 0 };
+    entry.totalRevenue += order.totalAmount;
+    entry.orders += 1;
+    entry.certificates += order.quantity;
+    breakdownMap.set(method, entry);
+  });
+  const breakdown = Array.from(breakdownMap.values()).sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  const cards = [
+    { label: "Receita filtrada", value: currencyFormatter.format(revenue), helper: "Apenas pedidos pagos" },
+    { label: "Certificados", value: certificates.toLocaleString("pt-BR"), helper: "Somente pagos" },
+    { label: "Pedidos", value: ordersCount.toLocaleString("pt-BR"), helper: "Inclui todos os status" },
+    { label: "Ticket médio", value: currencyFormatter.format(avgTicket), helper: "Pagos / pedido" },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-border/60">
+        <CardHeader>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Vendas</p>
+          <CardTitle className="text-xl font-semibold">Filtro de vendas</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-3 md:grid-cols-3">
+            <div>
+              <Label className="text-xs text-muted-foreground">Status</Label>
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos</SelectItem>
+                  <SelectItem value="PAID">Pago</SelectItem>
+                  <SelectItem value="PENDING">Pendente</SelectItem>
+                  <SelectItem value="CANCELED">Cancelado</SelectItem>
+                  <SelectItem value="FAILED">Falhou</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Período</Label>
+              <Select value={periodFilter} onValueChange={setPeriodFilter}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Período" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="30">Últimos 30 dias</SelectItem>
+                  <SelectItem value="90">Últimos 90 dias</SelectItem>
+                  <SelectItem value="365">Últimos 12 meses</SelectItem>
+                  <SelectItem value="all">Todo o histórico</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">Forma de pagamento</Label>
+              <Select value={methodFilter} onValueChange={setMethodFilter}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Forma" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paymentOptions.map((option) => (
+                    <SelectItem key={option} value={option}>
+                      {option === "all" ? "Todas" : option.replace(/[_-]/g, " ").toLowerCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {cards.map((card) => (
+              <Card key={card.label} className="border-border/60">
+                <CardHeader className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                    {card.label}
+                  </p>
+                  <CardTitle className="text-2xl font-semibold">{card.value}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-xs text-muted-foreground">{card.helper}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-[1.2fr,1fr]">
+            <Card className="border-border/60">
+              <CardHeader>
+                <CardTitle className="text-lg">Pedidos filtrados</CardTitle>
+                <p className="text-xs text-muted-foreground">
+                  {ordersCount} pedidos • {paidFiltered.length} pagos • {certificates} certificados pagos
+                </p>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                {filteredOrders.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Nenhum pedido para os filtros atuais.</p>
+                ) : (
+                  <div className="min-w-full rounded-2xl border border-border/60">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Data</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Pagamento</TableHead>
+                          <TableHead>Certificados</TableHead>
+                          <TableHead>Valor</TableHead>
+                          <TableHead>Cliente</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredOrders.slice(0, 25).map((order) => (
+                          <TableRow key={order.id}>
+                            <TableCell>{dateFormatter.format(new Date(order.createdAt))}</TableCell>
+                            <TableCell className="font-semibold">{formatStatus(order.status)}</TableCell>
+                            <TableCell className="capitalize">
+                              {(order.paymentMethod || "indiferente").replace(/[_-]/g, " ").toLowerCase()}
+                            </TableCell>
+                            <TableCell>{order.quantity}</TableCell>
+                            <TableCell className="font-semibold">
+                              {currencyFormatter.format(order.totalAmount)}
+                            </TableCell>
+                            <TableCell className="text-xs text-muted-foreground">
+                              {order.customerEmail ?? "N/A"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/60">
+              <CardHeader>
+                <CardTitle className="text-lg">Pagamentos (filtro aplicado)</CardTitle>
+                <p className="text-xs text-muted-foreground">Apenas pedidos pagos dentro dos filtros.</p>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {breakdown.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem pagamentos para este filtro.</p>
+                ) : (
+                  breakdown.map((item) => (
+                    <div
+                      key={item.method}
+                      className="flex items-center justify-between rounded-xl border border-border/60 px-3 py-2"
+                    >
+                      <div>
+                        <p className="text-sm font-semibold">
+                          {item.method.replace(/[_-]/g, " ").toLowerCase()}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.orders} pedidos · {item.certificates} certificados
+                        </p>
+                      </div>
+                      <span className="text-base font-semibold">
+                        {currencyFormatter.format(item.totalRevenue)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 type AdminUserTableProps = {
   title: string;
   description: string;
