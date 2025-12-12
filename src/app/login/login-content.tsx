@@ -16,7 +16,7 @@ export function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/certificados";
-  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const { data: session, isPending: sessionPending, refetch: refetchSession } = authClient.useSession();
 
   const [mode, setMode] = useState<Mode>("login");
   const [email, setEmail] = useState("");
@@ -68,12 +68,13 @@ export function LoginContent() {
         throw new Error(authError.message || "Nao foi possivel autenticar. Tente novamente.");
       }
 
+      await refetchSession();
       const maybeUrl =
         data && typeof data === "object" && "url" in data && typeof (data as { url?: unknown }).url === "string"
           ? (data as { url: string }).url
           : null;
 
-      router.push(maybeUrl || redirectTo);
+      router.replace(maybeUrl || redirectTo);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar.");
     } finally {
@@ -92,10 +93,11 @@ export function LoginContent() {
       if (signInError) {
         throw new Error(signInError.message || "Nao foi possivel autenticar com Google.");
       }
+      await refetchSession();
       if (data?.url) {
         window.location.href = data.url;
       } else {
-        router.push(redirectTo);
+        router.replace(redirectTo);
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao autenticar com Google.");
