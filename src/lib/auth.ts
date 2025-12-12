@@ -2,15 +2,11 @@ import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { jwt } from "better-auth/plugins";
 import type { SocialProviders } from "@better-auth/core/social-providers";
+import { getAppUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
 import { normalizeRole } from "@/lib/roles";
 
-const defaultAppUrl = "http://localhost:3000";
-const inferredVercelUrl =
-  process.env.VERCEL_URL && !process.env.NEXT_PUBLIC_APP_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : null;
-const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? inferredVercelUrl ?? defaultAppUrl;
+const appUrl = getAppUrl();
 
 const googleClientId = process.env.GOOGLE_CLIENT_ID;
 const googleClientSecret = process.env.GOOGLE_CLIENT_SECRET;

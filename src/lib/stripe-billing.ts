@@ -1,7 +1,8 @@
+import { getAppUrl } from "@/lib/app-url";
 import { prisma } from "@/lib/prisma";
 import { assertStripe } from "@/lib/stripe";
 
-const defaultBaseUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+const defaultBaseUrl = getAppUrl();
 const configuredPriceId = process.env.STRIPE_PRICE_ID;
 
 type CheckoutParams = {
