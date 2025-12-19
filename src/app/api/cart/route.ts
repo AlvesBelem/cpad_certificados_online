@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { addItemToCart, clearCart, getCartForUser, updateCartItemQuantity } from "@/lib/cart-store";
-import { requireSessionForAction } from "@/lib/session";
+import { computeCart } from "@/lib/cart-pricing";
+import { getSession, requireSessionForAction } from "@/lib/session";
 
 function badRequest(message: string, status = 400) {
   return NextResponse.json({ message }, { status });
@@ -14,7 +15,11 @@ function handleError(error: unknown) {
 
 export async function GET() {
   try {
-    const session = await requireSessionForAction();
+    const session = await getSession();
+    if (!session || !session.user?.id) {
+      // visitante sem sessão: devolve carrinho vazio calculado para manter o formato esperado
+      return NextResponse.json(computeCart([]));
+    }
     const cart = getCartForUser(session.user.id);
     return NextResponse.json(cart);
   } catch (error) {
