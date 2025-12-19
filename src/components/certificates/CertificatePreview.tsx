@@ -87,12 +87,12 @@ export function CertificatePreview({
     <div className={contentClass} style={contentStyle}>
       {showWatermark ? (
         <>
-          <div data-watermark="true" className="pointer-events-none absolute inset-0 z-10 opacity-60 mix-blend-multiply">
+          <div data-watermark="true" className="pointer-events-none absolute inset-0 z-50 opacity-60 mix-blend-multiply">
             <div className="h-full w-full bg-[radial-gradient(circle,_rgba(0,0,0,0.08)_1px,_transparent_1px)] bg-[length:32px_32px]" />
           </div>
           <div
             data-watermark="true"
-            className="pointer-events-none absolute inset-0 z-20 flex flex-wrap select-none text-center text-xs font-bold uppercase tracking-[0.3em] text-black/10 blur-[0.3px]"
+            className="pointer-events-none absolute inset-0 z-50 flex flex-wrap select-none text-center text-xs font-bold uppercase tracking-[0.3em] text-black/10 blur-[0.3px]"
           >
             {Array.from({ length: 40 }).map((_, index) => (
               <span key={index} className="m-3 rotate-[-20deg]">
