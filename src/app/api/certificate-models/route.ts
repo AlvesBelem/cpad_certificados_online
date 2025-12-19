@@ -9,6 +9,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Informe o certificado." }, { status: 400 });
   }
 
+  // Avoid hard failure when DATABASE_URL is not configured in local envs.
+  if (!process.env.DATABASE_URL) {
+    return NextResponse.json({ models: [] });
+  }
+
   const models = await prisma.certificateModel.findMany({
     where: {
       certificateSlug,

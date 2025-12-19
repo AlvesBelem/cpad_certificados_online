@@ -8,16 +8,66 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 const certificatePreviews = [
-  { title: "Batismo", href: "/certificados/batismo", image: "/certificates/batismo/certificado_batismo.jpg" },
-  { title: "EBD", href: "/certificados/ebd", image: "/certificates/ebd/certificado_ebd_trimestre.jpg" },
-  { title: "Discipulado", href: "/certificados/discipulado", image: "/certificates/discipulado/certificado_discipulado.jpg" },
-  { title: "Apresenta???o Menina", href: "/certificados/apresentacao-menina", image: "/certificates/apresentacao-menina/certificado_menina.jpg" },
-  { title: "Apresenta???o Menino", href: "/certificados/apresentacao-menino", image: "/certificates/apresentacao-menino/certificado_menino.jpg" },
-  { title: "Casamento", href: "/certificados/casamento", image: "/certificates/casamento/certificado_casamento.jpg" },
-  { title: "EBD Anual", href: "/certificados/ebd-anual", image: "/certificates/ebd-anual/certificado_ebd_anual.jpg" },
-  { title: "Ordena???o Pastoral", href: "/certificados/ordenacao-pastoral", image: "/certificates/ordenacao-pastoral/certificado_ordenacao.jpg" },
-  { title: "Dizimista Fiel", href: "/certificados/dizimista-fiel", image: "/certificates/dizimista-fiel/certificado_dizimista.jpg" },
-  { title: "Encontro de Casais", href: "/certificados/encontro-casais", image: "/certificates/encontro-casais/certificado_casais.jpg" },
+  {
+    title: "Batismo",
+    href: "/certificados/batismo",
+    image: "/certificates/batismo/certificado_batismo.jpg",
+    description: "Layout solene com espaço para dados do batizando, ministros e igreja.",
+  },
+  {
+    title: "EBD",
+    href: "/certificados/ebd",
+    image: "/certificates/ebd/certificado_ebd_trimestre.jpg",
+    description: "Modelo clássico da Escola Bíblica Dominical por trimestre.",
+  },
+  {
+    title: "Discipulado",
+    href: "/certificados/discipulado",
+    image: "/certificates/discipulado/certificado_discipulado.jpg",
+    description: "Certificado dourado para cursos e treinamentos de discipulado.",
+  },
+  {
+    title: "Apresentação Menina",
+    href: "/certificados/apresentacao-menina",
+    image: "/certificates/apresentacao-menina/certificado_menina.jpg",
+    description: "Versão delicada para apresentação infantil feminina.",
+  },
+  {
+    title: "Apresentação Menino",
+    href: "/certificados/apresentacao-menino",
+    image: "/certificates/apresentacao-menino/certificado_menino.jpg",
+    description: "Layout dedicado para apresentação infantil masculina.",
+  },
+  {
+    title: "Casamento",
+    href: "/certificados/casamento",
+    image: "/certificates/casamento/certificado_casamento.jpg",
+    description: "Arte floral com espaço para data, local e assinaturas.",
+  },
+  {
+    title: "EBD Anual",
+    href: "/certificados/ebd-anual",
+    image: "/certificates/ebd-anual/certificado_ebd_anual.jpg",
+    description: "Registro anual para promoção de turma na Escola Bíblica Dominical.",
+  },
+  {
+    title: "Ordenação Pastoral",
+    href: "/certificados/ordenacao-pastoral",
+    image: "/certificates/ordenacao-pastoral/certificado_ordenacao.jpg",
+    description: "Documento de ordenação pastoral com campos completos.",
+  },
+  {
+    title: "Dizimista Fiel",
+    href: "/certificados/dizimista-fiel",
+    image: "/certificates/dizimista-fiel/certificado_dizimista.jpg",
+    description: "Reconhecimento de fidelidade nos dízimos com verso bíblico.",
+  },
+  {
+    title: "Encontro de Casais",
+    href: "/certificados/encontro-casais",
+    image: "/certificates/encontro-casais/certificado_casais.jpg",
+    description: "Certificado romântico para eventos e encontros de casais.",
+  },
 ];
 
 const steps = [
@@ -167,6 +217,8 @@ function TemplateGrid() {
     return () => clearInterval(interval);
   }, []);
 
+  const activeItem = certificatePreviews[currentIndex];
+
   return (
     <section id="modelos" className="space-y-6">
       <div className="space-y-3">
@@ -177,45 +229,71 @@ function TemplateGrid() {
         </p>
       </div>
 
-      <div className="overflow-hidden rounded-3xl border border-border/60 bg-card/50 px-3 py-6 shadow-sm">
-        <div
-          className="flex transition-transform duration-700 ease-in-out"
-          style={{ transform: `translateX(-${currentIndex * 100}%)` }}
-        >
-          {certificatePreviews.map((item) => {
-            const imageSrc = item.image || "/certificates/batismo/certificado_batismo.jpg";
-            return (
-              <Link
-                key={item.title}
-                href={item.href}
-                className="group relative flex min-w-full flex-shrink-0 flex-col items-center gap-4 px-2"
-              >
-                <div className="relative h-[320px] w-full overflow-hidden rounded-2xl border border-border/70 bg-muted shadow-md">
-                  <Image
-                    src={imageSrc}
-                    alt={`Prévia do certificado ${item.title}`}
-                    fill
-                    className="object-contain"
-                    sizes="(min-width: 1024px) 800px, 100vw"
-                    priority
-                  />
-                </div>
-                <div className="flex w-full items-center justify-between rounded-xl border border-border/60 bg-background/90 px-4 py-3 shadow-sm">
-                  <div>
-                    <p className="text-sm font-semibold text-foreground">{item.title}</p>
-                    <p className="text-xs text-muted-foreground">Pronto para imprimir</p>
-                  </div>
-                  <ArrowRight className="h-4 w-4 text-primary transition group-hover:translate-x-1" />
-                </div>
-              </Link>
-            );
-          })}
+      <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-primary/8 via-card/70 to-background p-4 shadow-lg">
+        <div className="grid items-center gap-6 lg:grid-cols-[1.15fr,0.85fr]">
+          <div className="relative h-[340px] w-full overflow-hidden rounded-2xl bg-black/5 sm:h-[420px]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(120,102,255,0.08),transparent_45%)]" />
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_80%_60%,rgba(12,148,136,0.12),transparent_40%)]" />
+            <Image
+              src={activeItem.image || "/certificates/batismo/certificado_batismo.jpg"}
+              alt={`Prévia do certificado ${activeItem.title}`}
+              fill
+              className="object-contain p-4 drop-shadow-2xl"
+              sizes="(min-width: 1024px) 720px, 100vw"
+              priority
+            />
+          </div>
+
+          <div className="flex h-full flex-col justify-between gap-6 rounded-2xl bg-background/90 px-6 py-5 shadow-[0_24px_60px_-32px_rgba(15,23,42,0.6)]">
+            <div className="space-y-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.4em] text-primary/70">Modelo em destaque</p>
+              <h3 className="text-2xl font-bold text-foreground md:text-3xl">{activeItem.title}</h3>
+              <p className="text-sm leading-relaxed text-muted-foreground">{activeItem.description}</p>
+              <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
+                <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">Campos editáveis</span>
+                <span className="rounded-full bg-emerald-100/60 px-3 py-1 text-emerald-700">PDF imediato</span>
+                <span className="rounded-full bg-slate-200/70 px-3 py-1 text-slate-700">Fiel ao layout original</span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <Button asChild size="lg" className="gap-2">
+                <Link href={activeItem.href}>
+                  Abrir modelo
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                {certificatePreviews.map((item, index) => {
+                  const isActive = index === currentIndex;
+                  return (
+                    <button
+                      key={item.title}
+                      type="button"
+                      onClick={() => setCurrentIndex(index)}
+                      className="group relative h-11 w-28 overflow-hidden rounded-xl bg-card/80 p-[2px] text-left shadow-inner transition hover:scale-[1.01] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+                      aria-label={`Ver modelo ${item.title}`}
+                    >
+                      <div
+                        className={`absolute inset-0 rounded-[10px] transition ${isActive ? "bg-primary/15" : "bg-muted"}`}
+                      />
+                      <div className="relative z-10 flex h-full items-center gap-2 px-3 text-xs font-semibold">
+                        <span
+                          className={`h-2 w-2 rounded-full transition ${isActive ? "bg-primary" : "bg-muted-foreground/50"}`}
+                        />
+                        <span className="truncate">{item.title}</span>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>
   );
 }
-
 function HowItWorks() {
   return (
     <section className="grid gap-6 rounded-3xl border border-border/80 bg-card px-6 py-10 md:grid-cols-[1fr,1.1fr]">
