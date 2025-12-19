@@ -5,8 +5,8 @@ import { ReactNode, RefObject, CSSProperties, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
-export const SCREEN_CERTIFICATE_WIDTH_MM = 279.168;
-export const SCREEN_CERTIFICATE_HEIGHT_MM = 174.979;
+export const SCREEN_CERTIFICATE_WIDTH_MM = 297; // alinhar pre-visualizacao ao tamanho A4 paisagem
+export const SCREEN_CERTIFICATE_HEIGHT_MM = 210;
 export const PRINT_CERTIFICATE_WIDTH_MM = 297; // A4 landscape width
 export const PRINT_CERTIFICATE_HEIGHT_MM = 210; // A4 landscape height
 
