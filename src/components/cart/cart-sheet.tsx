@@ -49,7 +49,9 @@ const offlinePaymentMethods = [
   { value: "outro", label: "Outro" },
 ];
 
-async function downloadCertificates(items: MinimalCartItem[]) {
+const COMBINED_MAX_PAGES = 25;
+
+async function downloadCertificates(items: MinimalCartItem[], mode: "individual" | "combined") {
   if (!items.length) return;
 
   const units: DownloadUnit[] = [];
@@ -79,6 +81,32 @@ async function downloadCertificates(items: MinimalCartItem[]) {
       }
     });
   });
+
+  if (!units.length) {
+    toast.error("Nao foi possivel gerar os PDF(s). Refaça o pedido.");
+    return;
+  }
+
+  if (mode === "combined") {
+    const chunkCount = Math.ceil(units.length / COMBINED_MAX_PAGES);
+    for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
+      const chunk = units.slice(chunkIndex * COMBINED_MAX_PAGES, (chunkIndex + 1) * COMBINED_MAX_PAGES);
+      const pdf = new jsPDF("landscape", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      chunk.forEach((unit, index) => {
+        if (!unit.previewImage) return;
+        if (index > 0) {
+          pdf.addPage();
+        }
+        pdf.addImage(unit.previewImage, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
+      });
+      const fileName =
+        chunkCount === 1 ? "certificados.pdf" : `certificados-parte-${chunkIndex + 1}.pdf`;
+      pdf.save(fileName);
+    }
+    return;
+  }
 
   const files: { filename: string; data: ArrayBuffer }[] = [];
   for (const unit of units) {
@@ -130,13 +158,14 @@ async function downloadCertificates(items: MinimalCartItem[]) {
 
 export function CartSheet() {
   const { isOpen, closeCart } = useCartSheet();
-  const { formatted, loading, mutating, error, updateQuantity, clear } = useCartContext();
+  const { formatted, loading, mutating, error, updateQuantity, clear, bulkImporting } = useCartContext();
   const router = useRouter();
   const [checkingOut, setCheckingOut] = useState(false);
   const { data: session } = authClient.useSession();
   const sessionUser = session?.user as { role?: string } | undefined;
   const canFinishOffline = canFinalizeOffline(sessionUser?.role);
   const [paymentMethod, setPaymentMethod] = useState<string>(offlinePaymentMethods[0]?.value ?? "dinheiro");
+  const [downloadMode, setDownloadMode] = useState<"individual" | "combined">("individual");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -222,7 +251,7 @@ export function CartSheet() {
           previewImage: entry.previewImage ?? item.previewImage,
         })),
       }));
-      await downloadCertificates(downloadPayload);
+      await downloadCertificates(downloadPayload, downloadMode);
       await clear();
       closeCart();
       const query = params.toString();
@@ -388,13 +417,54 @@ export function CartSheet() {
               Checkout online em desenvolvimento. Apenas administradores e funcionários conseguem finalizar pagamentos neste ambiente de teste.
             </p>
           )}
+          <div className="mt-4 space-y-2">
+            <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Entrega dos PDFs</Label>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <label className="flex cursor-pointer items-start gap-2 rounded-2xl border border-border/60 p-3 text-left">
+                <input
+                  type="radio"
+                  className="mt-1"
+                  value="individual"
+                  checked={downloadMode === "individual"}
+                  onChange={() => setDownloadMode("individual")}
+                />
+                <div>
+                  <p className="font-semibold text-foreground">PDFs individuais (ZIP)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Cada certificado vira um PDF separado. Se houver vários, entregamos em um arquivo compactado.
+                  </p>
+                </div>
+              </label>
+              <label className="flex cursor-pointer items-start gap-2 rounded-2xl border border-border/60 p-3 text-left">
+                <input
+                  type="radio"
+                  className="mt-1"
+                  value="combined"
+                  checked={downloadMode === "combined"}
+                  onChange={() => setDownloadMode("combined")}
+                />
+                <div>
+                  <p className="font-semibold text-foreground">PDF único (até 25 páginas)</p>
+                  <p className="text-xs text-muted-foreground">
+                    Agrupa os certificados em um único arquivo. A cada 25 páginas geramos um novo PDF automaticamente.
+                  </p>
+                </div>
+              </label>
+            </div>
+          </div>
           <Button
             type="button"
             className="mt-3 w-full"
-            disabled={items.length === 0 || mutating || checkingOut}
+            disabled={items.length === 0 || mutating || checkingOut || bulkImporting}
             onClick={handleCheckout}
           >
-            {checkingOut ? "Processando..." : canFinishOffline ? "Finalizar pedido" : "Ir para checkout"}
+            {checkingOut
+              ? "Gerando seus PDFs..."
+              : bulkImporting || mutating
+                ? "Importando certificados..."
+                : canFinishOffline
+                  ? "Finalizar pedido"
+                  : "Ir para checkout"}
           </Button>
         </footer>
       </aside>

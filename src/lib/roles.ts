@@ -1,20 +1,20 @@
 export enum UserRole {
   ADMIN = "ADMIN",
-  EMPLOYEE = "EMPLOYEE",
-  USER = "USER",
+  FUNCIONARIO = "FUNCIONARIO",
+  USUARIO = "USUARIO",
 }
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   [UserRole.ADMIN]: "Administrador",
-  [UserRole.EMPLOYEE]: "Funcionario",
-  [UserRole.USER]: "Usuario",
+  [UserRole.FUNCIONARIO]: "Funcionario",
+  [UserRole.USUARIO]: "Usuario",
 };
 
 export function normalizeRole(role?: string | null): UserRole {
-  if (role === UserRole.ADMIN || role === UserRole.EMPLOYEE) {
+  if (role === UserRole.ADMIN || role === UserRole.FUNCIONARIO) {
     return role;
   }
-  return UserRole.USER;
+  return UserRole.USUARIO;
 }
 
 export function isAdmin(role?: string | null) {
@@ -23,5 +23,5 @@ export function isAdmin(role?: string | null) {
 
 export function canFinalizeOffline(role?: string | null) {
   const normalized = normalizeRole(role);
-  return normalized === UserRole.ADMIN || normalized === UserRole.EMPLOYEE;
+  return normalized === UserRole.ADMIN || normalized === UserRole.FUNCIONARIO;
 }

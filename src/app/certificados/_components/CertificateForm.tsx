@@ -50,7 +50,10 @@ export function CertificateForm({
     };
 
     return (
-        <form className="certificate-form space-y-4 rounded-2xl border border-border/50 bg-background/70 p-4 shadow-sm print:hidden">
+        <form
+            className="certificate-form space-y-4 rounded-2xl border border-border/50 bg-background/70 p-4 shadow-sm print:hidden"
+            data-certificate-form-anchor
+        >
             <div className="hidden gap-2 pt-2 md:flex">
                 {showGenerate && (
                     <Button

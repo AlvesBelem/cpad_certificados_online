@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -13,9 +13,11 @@ import { useCartContext } from "@/components/cart/cart-provider";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
+import { useBulkCartImport } from "@/hooks/use-bulk-cart-import";
 import { CertificateForm } from "./CertificateForm";
 import { cn } from "@/lib/utils";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
+import { Button } from "@/components/ui/button";
 
 const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE = "\"Portanto ide, fazei discípulos de todas as nações, batizando-os em nome do Pai, e do Filho, e do Espírito Santo.\" Mateus 28:19";
@@ -206,6 +208,19 @@ export function IgrejaCertificateBuilder({
     summary: campos.nomeBatizando,
     getPreviewImage: capturePreviewImage,
   });
+  const {
+    bulkCertificateCount,
+    hasBulkRows,
+    processingBulk,
+    handleApplyBulkRow,
+    handleRowsChange,
+    handleBulkAddToCart,
+  } = useBulkCartImport<Campos>({
+    campos,
+    setCampos,
+    handleAddToCart,
+    summaryField: "nomeBatizando",
+  });
 
   useEffect(() => {
     if (cartError) {
@@ -228,10 +243,6 @@ export function IgrejaCertificateBuilder({
     await handleGeneratePDF();
   };
 
-  const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
-    setCampos((prev) => ({ ...prev, ...row }));
-  }, []);
-
   const dataFormatada = campos.dataBatismo
     ? new Date(campos.dataBatismo).toLocaleDateString("pt-BR")
     : "____/____/______";
@@ -243,8 +254,25 @@ export function IgrejaCertificateBuilder({
         certificateTitle={resolvedTitle}
         fields={BULK_FIELDS}
         onApplyRow={handleApplyBulkRow}
+        onRowsChange={handleRowsChange}
       />
+      {hasBulkRows ? (
+        <div className="rounded-3xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-semibold text-foreground">
+              {bulkCertificateCount} linha{bulkCertificateCount > 1 ? "s" : ""} importada{bulkCertificateCount > 1 ? "s" : ""}.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              Ao adicionar ao carrinho, consideramos cada linha preenchida como um certificado individual.
+            </p>
+            <Button type="button" onClick={handleBulkAddToCart} disabled={isAddingToCart || processingBulk}>
+              {processingBulk ? "Importando certificados..." : `Adicionar ${bulkCertificateCount} certificado(s) ao carrinho`}
+            </Button>
+          </div>
+        </div>
+      ) : null}
       {/* Form container */}
+      {!hasBulkRows ? (
       <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold text-foreground">Dados do certificado</h3>
@@ -321,6 +349,7 @@ export function IgrejaCertificateBuilder({
           </div>
         )}
       </div>
+      ) : null}
 
       {/* Certificate preview */}
       <CertificatePreview

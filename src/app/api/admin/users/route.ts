@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
         where: { id: existing.id },
         data: {
           name,
-          role: UserRole.EMPLOYEE,
+          role: UserRole.FUNCIONARIO,
         },
       });
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         email,
-        role: UserRole.EMPLOYEE,
+        role: UserRole.FUNCIONARIO,
         igrejaId: session.user.igrejaId,
         igrejaStatus: session.user.igrejaStatus ?? "ATIVA",
       },

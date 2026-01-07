@@ -62,6 +62,7 @@ export function useCart() {
   const [loading, setLoading] = useState(false);
   const [mutating, setMutating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [bulkImporting, setBulkImporting] = useState(false);
 
   const fetchCart = useCallback(async () => {
     setLoading(true);
@@ -148,5 +149,7 @@ export function useCart() {
     addItem,
     updateQuantity,
     clear,
+    bulkImporting,
+    setBulkImporting,
   };
 }

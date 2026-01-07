@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,8 +9,10 @@ import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
 import { CertificateForm } from "./CertificateForm";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
+import { BulkImportActions } from "@/components/certificates/bulk-import-actions";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
+import { useBulkCartImport } from "@/hooks/use-bulk-cart-import";
 
 const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE = "\"Habite ricamente em vós a palavra de Cristo.\" Colossenses 3:16";
@@ -203,6 +205,19 @@ export function EbdCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Builder
     summary: campos.nomeAluno,
     getPreviewImage: capturePreviewImage,
   });
+  const {
+    bulkCertificateCount,
+    hasBulkRows,
+    processingBulk,
+    handleApplyBulkRow,
+    handleRowsChange,
+    handleBulkAddToCart,
+  } = useBulkCartImport<Campos>({
+    campos,
+    setCampos,
+    handleAddToCart,
+    summaryField: "nomeAluno",
+  });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = event.target.value;
@@ -217,10 +232,6 @@ export function EbdCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Builder
     await handleGeneratePDF();
   };
 
-  const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
-    setCampos((prev) => ({ ...prev, ...row }));
-  }, []);
-
   return (
     <section className="certificate-print-root flex flex-col gap-6 print:block">
       <BulkImportPanel
@@ -228,7 +239,15 @@ export function EbdCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Builder
         certificateSlug={CERTIFICATE_SLUG}
         fields={BULK_FIELDS}
         onApplyRow={handleApplyBulkRow}
+        onRowsChange={handleRowsChange}
       />
+      <BulkImportActions
+        count={bulkCertificateCount}
+        processing={processingBulk}
+        isAdding={isAddingToCart}
+        onConfirm={handleBulkAddToCart}
+      />
+      {!hasBulkRows ? (
       <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold text-foreground">Dados do certificado</h3>
@@ -294,6 +313,7 @@ export function EbdCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Builder
           showGenerate={false}
         />
       </div>
+      ) : null}
 
       <CertificatePreview certificateRef={certificateRef} frameColor="#e5ecf5">
         <CertificateInner logoSrc={logoSrc} igrejaNome={igrejaNome} campos={campos} dataConclusaoFormatada={dataConclusaoFormatada} />
