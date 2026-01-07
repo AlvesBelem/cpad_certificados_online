@@ -67,7 +67,7 @@ function CertificateInner({ igrejaNome, campos, dataFormatada, logoSrc }: Certif
 
   return (
     <div className="flex h-full flex-col rounded-[32px] bg-white p-6 text-[#6b4b1f] md:p-5">
-      <div className="space-y-3 text-center md:text-left">
+      <div className="space-y-3 text-center md:text-left ">
         <div className="flex justify-center md:justify-start">
           <div className="relative h-16 w-16 overflow-hidden rounded-2xl border-2 border-primary/20 bg-background shadow-md">
             <Image src={logoSrc} alt="Logo da igreja" fill sizes="64px" className="object-cover" priority unoptimized />
@@ -80,7 +80,7 @@ function CertificateInner({ igrejaNome, campos, dataFormatada, logoSrc }: Certif
         </div>
       </div>
 
-      <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
+      <div className="mt-auto space-y-3 text-sm leading-relaxed text-muted-foreground">
         <p>
           Certificamos que o(a) <span className="font-semibold text-foreground">{nomeTexto}</span> tem sido Dizimista Fiel em conformidade com a
           palavra de Deus, ajudando a estabelecer o reino de Deus na <span className="font-semibold text-foreground">{igrejaNome}</span>.
@@ -94,11 +94,11 @@ function CertificateInner({ igrejaNome, campos, dataFormatada, logoSrc }: Certif
         ) : null}
       </div>
 
-      <div className="mt-6 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-primary">
+      <div className="mt-auto rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-primary">
         <p className="text-center leading-relaxed">{versiculoTexto}</p>
       </div>
 
-      <div className="mt-6 grid gap-6 text-center text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-1">
+      <div className="mt-auto grid gap-6 text-center text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-1">
         <div className="space-y-2">
           <p className="font-mono text-base tracking-[0.3em] text-foreground/80">{SIGNATURE_LINE}</p>
           <p className="text-sm font-semibold tracking-normal text-foreground">{oficianteTexto}</p>

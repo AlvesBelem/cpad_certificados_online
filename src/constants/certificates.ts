@@ -73,6 +73,12 @@ export const CERTIFICATE_TEMPLATES: CertificateTemplate[] = [
     preview: "/certificates/ordenacao-diacono/certificado_diacono.jpg",
   },
   {
+    slug: "ordenacao-obreiro",
+    title: "Certificado de Ordenacao Obreiro",
+    description: "Modelo para registrar a ordenacao de obreiros com os mesmos campos essenciais.",
+    preview: "/certificates/ordenacao-obreiro/certificado_obreiro.jpg",
+  },
+  {
     slug: "ordenacao-evangelista",
     title: "Certificado de Ordenacao Evangelista",
     description: "Certificado para ordenacao ao ministerio evangelista, com os campos essenciais.",

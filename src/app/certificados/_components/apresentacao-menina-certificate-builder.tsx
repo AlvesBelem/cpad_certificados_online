@@ -12,6 +12,7 @@ import { resolveBulkFields } from "@/components/certificates/bulk-import-fields"
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
+import { cn } from "@/lib/utils";
 
 const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE =
@@ -87,9 +88,12 @@ function CertificateInner({
 }: CertificateInnerProps) {
   const certificateModel = useCertificateModelContext();
   const showDefaultWatermark = !certificateModel?.backgroundImage;
+  const contentPaddingClass = certificateModel?.backgroundImage
+    ? "px-6 py-8 sm:px-8 sm:py-10 lg:px-16 lg:py-14"
+    : "px-4 py-6 sm:px-6 sm:py-8 md:px-8 md:py-10";
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden text-center md:p-2">
+    <div className={cn("relative flex h-full flex-col overflow-hidden text-center", contentPaddingClass)}>
       {showDefaultWatermark ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <Image
@@ -102,7 +106,7 @@ function CertificateInner({
           />
         </div>
       ) : null}
-      <div className="certificate-header flex flex-col items-start gap-6 text-left md:flex-row md:items-center md:gap-10">
+      <div className="certificate-header flex w-full flex-col items-start gap-6 text-left md:flex-row md:items-center md:gap-10">
         <div className="flex items-center justify-start">
           <div className="relative h-24 w-24 overflow-hidden rounded-3xl border-2 border-primary/30 bg-background shadow-lg">
             <Image src={logoSrc} alt="Logo da igreja" fill sizes="96px" className="object-cover" unoptimized />
@@ -120,15 +124,15 @@ function CertificateInner({
         </div>
       </div>
 
-      <div className="mt-10 flex flex-col gap-8 text-left lg:flex-row lg:gap-12">
-        <aside className="rounded-3xl bg-pink-100 p-6 lg:w-64">
+      <div className="mt-8 flex flex-1 flex-col gap-8 text-left lg:flex-row lg:items-start lg:gap-12">
+        <aside className="rounded-3xl bg-pink-100 p-6 lg:w-64 lg:flex-shrink-0">
           <p className="text-xs uppercase tracking-[0.4em] text-primary/60">Versículo</p>
           <div className="mt-3 h-px w-12 bg-primary/40" />
           <blockquote className="mt-4 text-base leading-relaxed text-primary/80">
             {campos.versiculo || DEFAULT_VERSE}
           </blockquote>
         </aside>
-        <div className="space-y-6 text-lg leading-relaxed text-muted-foreground">
+        <div className="flex-1 space-y-6 text-lg leading-relaxed text-muted-foreground">
           <p>
             Foi apresentado(a) oficialmente ao Senhor{" "}
             <span className="font-semibold text-foreground">{campos.nomeCrianca || "____________________"}</span>, do sexo{" "}
@@ -153,13 +157,13 @@ function CertificateInner({
         </div>
       </div>
 
-      <div className="-mt-10 grid gap-0 pt-10 text-right text-[11px] uppercase tracking-[0.4em] text-muted-foreground/80 md:grid-cols-2">
-        <div className="space-y-1">
+      <div className="mt-auto grid gap-10 pt-12 text-center text-[11px] uppercase tracking-[0.4em] text-muted-foreground/80 md:grid-cols-2">
+        <div className="space-y-2">
           <p className="text-sm font-semibold tracking-normal text-foreground">{campos.nomeSecretario || "Nome do Secretário(a)"} </p>
           <p className="font-mono text-base tracking-[0.3em] text-foreground/70">{SIGNATURE_LINE}</p>
           <p>Secretário(a)</p>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <p className="text-sm font-semibold tracking-normal text-foreground">{campos.nomePastor || "Nome do Pastor"}</p>
           <p className="font-mono text-base tracking-[0.3em] text-foreground/70">{SIGNATURE_LINE}</p>
           <p>Pastor</p>

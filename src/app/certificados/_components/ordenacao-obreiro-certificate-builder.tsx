@@ -106,7 +106,7 @@ function CertificateInner({
         </aside>
       </div>
 
-      <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
+      <div className="mt-auto space-y-3 text-sm leading-relaxed text-muted-foreground">
         <p>
           Certificamos que <span className="font-semibold text-foreground">{nomeTexto}</span>, nascido(a) em{" "}
           <span className="font-semibold text-foreground">{dataNascimentoFormatada}</span>, em{" "}
@@ -121,7 +121,7 @@ function CertificateInner({
         </p>
       </div>
 
-      <div className="mt-6 grid gap-4 border-t border-dashed border-primary/20 pt-6 text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-2">
+      <div className="mt-auto grid gap-4 border-t border-dashed border-primary/20 pt-6 text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-2">
         <div className="space-y-1 text-left">
           <p className="text-base font-semibold text-foreground">{cidadeTexto}</p>
           <p>Cidade</p>
@@ -132,7 +132,7 @@ function CertificateInner({
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 text-center text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-2">
+      <div className="mt-auto grid gap-6 text-center text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-2">
         <div className="space-y-2">
           <p className="font-mono text-base tracking-[0.3em] text-foreground/80">{SIGNATURE_LINE}</p>
           <p className="text-sm font-semibold tracking-normal text-foreground">{pastorOrdenanteTexto}</p>

@@ -65,7 +65,7 @@ export function CertificatePreview({
 
   const previewStyle: CSSProperties = { width: "100%", maxWidth: `${widthMm}mm` };
   if (!autoHeight) {
-    previewStyle.height = `${heightMm}mm`;
+    previewStyle.aspectRatio = `${widthMm} / ${heightMm}`;
   }
 
   const printPreviewStyle: CSSProperties = {
