@@ -14,7 +14,7 @@ import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 
 const DEFAULT_LOGO = "/assets/logos/igreja.png";
 const DEFAULT_VERSE = "\"Oh! quão bom e quão suave é que os irmãos vivam em união.\" Salmos 133:1";
-const SIGNATURE_LINE = "_____________________________";
+const SIGNATURE_LINE = "___________________";
 
 type BuilderProps = {
   igrejaNome: string;
@@ -83,7 +83,7 @@ function CertificateInner({ igrejaNome, campos, logoSrc }: CertificateInnerProps
         </div>
       </div>
 
-      <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
+      <div className="mt-auto space-y-3 text-sm leading-relaxed text-muted-foreground">
         <p className="text-center font-medium text-foreground">Temos o prazer em certificar que:</p>
         <p className="text-center text-lg font-semibold text-foreground">{nomeTexto}</p>
         <p className="text-center leading-relaxed">
@@ -91,11 +91,11 @@ function CertificateInner({ igrejaNome, campos, logoSrc }: CertificateInnerProps
         </p>
       </div>
 
-      <div className="mt-6 rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-primary">
+      <div className="mt-auto rounded-2xl border border-primary/15 bg-primary/5 p-4 text-sm text-primary">
         <p className="text-center leading-relaxed">{versiculoTexto}</p>
       </div>
 
-      <div className="mt-6 grid gap-6 text-center text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-3">
+      <div className="mt-auto grid gap-6 text-center text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-3">
         <div className="space-y-2">
           <p className="font-mono text-base tracking-[0.3em] text-foreground/80">{SIGNATURE_LINE}</p>
           <p className="text-sm font-semibold tracking-normal text-foreground">{pastorTexto}</p>

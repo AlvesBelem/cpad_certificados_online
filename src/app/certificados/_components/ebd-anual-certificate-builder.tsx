@@ -93,7 +93,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataConclusaoFormatada 
         </aside>
       </div>
 
-      <div className="mt-2 grid gap-2 rounded-2xl border border-primary/10 bg-primary/5 p-1 text-center text-[11px] uppercase tracking-[0.3em] text-primary/70 md:grid-cols-3">
+      <div className="mt-6 grid gap-2 rounded-2xl border border-primary/10 bg-primary/5 p-1 text-center text-[11px] uppercase tracking-[0.3em] text-primary/70 md:grid-cols-3">
         <div className="space-y-1">
           <p>Ano letivo</p>
           <p className="text-lg font-semibold tracking-tight text-primary/90">{anoTexto}</p>
@@ -108,7 +108,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataConclusaoFormatada 
         </div>
       </div>
 
-      <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
+      <div className="mt-8 space-y-3 text-sm leading-relaxed text-muted-foreground">
         <p>
           Certificamos{" "}
           <span className="font-semibold text-foreground">{alunoTexto}</span> pela participação e conclusão da classe{" "}
@@ -123,7 +123,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataConclusaoFormatada 
         </p>
       </div>
 
-      <div className="mt-6 grid gap-4 border-t border-dashed border-primary/20 pt-6 text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-2">
+      <div className="mt-20 grid gap-4 border-t border-dashed border-primary/20 pt-6 text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-2">
         <div className="space-y-1 text-left">
           <p className="text-base font-semibold text-foreground">{cidadeTexto}</p>
           <p>Cidade</p>

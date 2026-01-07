@@ -98,7 +98,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataInicioFormatada, da
         </aside>
       </div>
 
-      <div className="mt-6 grid gap-4 rounded-2xl border border-primary/10 bg-primary/5/30 p-4 text-center text-xs uppercase tracking-[0.3em] text-primary/70 md:grid-cols-2">
+      <div className="mt-8 grid gap-4 rounded-2xl border border-primary/10 bg-primary/5/30 p-4 text-center text-xs uppercase tracking-[0.3em] text-primary/70 md:grid-cols-2">
         <div className="space-y-1">
           <p>Participante</p>
           <p className="text-lg font-semibold tracking-tight text-primary/90">{participante}</p>
@@ -111,7 +111,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataInicioFormatada, da
         </div>
       </div>
 
-      <div className="mt-6 space-y-3 text-sm leading-relaxed text-muted-foreground">
+      <div className="mt-8 space-y-3 text-sm leading-relaxed text-muted-foreground">
         <p>
           Atestamos que <span className="font-semibold text-foreground">{participante}</span> concluiu o curso de discipulado ministrado pela Igreja{" "}
           <span className="font-semibold text-foreground">{igrejaTexto}</span>, demonstrando dedicação e constância em cada encontro.
@@ -124,7 +124,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataInicioFormatada, da
         <p>Observações: {observacoesTexto}</p>
       </div>
 
-      <div className="mt-6 grid gap-6 border-t border-dashed border-primary/20 pt-6 text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-3">
+      <div className="mt-20 grid gap-6 border-t border-dashed border-primary/20 pt-6 text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-3">
         <div className="space-y-2 text-center">
           <p className="font-mono text-base tracking-[0.3em] text-foreground/80">{SIGNATURE_LINE}</p>
           <p className="text-sm font-semibold tracking-normal text-foreground">{campos.pastor || "Pastor Responsável"}</p>
