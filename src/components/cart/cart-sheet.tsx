@@ -5,156 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, LogIn, ShoppingCart, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import jsPDF from "jspdf";
-import JSZip from "jszip";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
 import { authClient } from "@/lib/auth-client";
-import { canFinalizeOffline } from "@/lib/roles";
 import { useCartContext } from "./cart-provider";
 import { useCartSheet } from "./cart-sheet-context";
 import { cn } from "@/lib/utils";
-
-type CartEntry = {
-  id: string;
-  quantity: number;
-  summary?: string | null;
-  previewImage?: string | null;
-};
-
-type MinimalCartItem = {
-  id: string;
-  certificateSlug: string;
-  title: string;
-  quantity: number;
-  summary?: string | null;
-  previewImage?: string | null;
-  entries?: CartEntry[];
-};
-
-type DownloadUnit = {
-  slug: string;
-  title: string;
-  summary?: string | null;
-  previewImage?: string | null;
-  sequence: number;
-};
-
-const offlinePaymentMethods = [
-  { value: "dinheiro", label: "Dinheiro" },
-  { value: "cartao", label: "Cartão" },
-  { value: "pix", label: "Pix" },
-  { value: "transferencia", label: "Transferência" },
-  { value: "outro", label: "Outro" },
-];
-
-const COMBINED_MAX_PAGES = 25;
-
-async function downloadCertificates(items: MinimalCartItem[], mode: "individual" | "combined") {
-  if (!items.length) return;
-
-  const units: DownloadUnit[] = [];
-  items.forEach((item) => {
-    const entryList =
-      item.entries && item.entries.length
-        ? item.entries
-        : [
-            {
-              id: `${item.id}-default`,
-              quantity: item.quantity,
-              summary: item.summary,
-              previewImage: item.previewImage,
-            },
-          ];
-
-    entryList.forEach((entry) => {
-      const copies = Math.max(1, entry.quantity || 1);
-      for (let copyIndex = 0; copyIndex < copies; copyIndex++) {
-        units.push({
-          slug: item.certificateSlug,
-          title: item.title,
-          summary: entry.summary ?? item.summary,
-          previewImage: entry.previewImage ?? item.previewImage,
-          sequence: units.length + 1,
-        });
-      }
-    });
-  });
-
-  if (!units.length) {
-    toast.error("Nao foi possivel gerar os PDF(s). Refaça o pedido.");
-    return;
-  }
-
-  if (mode === "combined") {
-    const chunkCount = Math.ceil(units.length / COMBINED_MAX_PAGES);
-    for (let chunkIndex = 0; chunkIndex < chunkCount; chunkIndex += 1) {
-      const chunk = units.slice(chunkIndex * COMBINED_MAX_PAGES, (chunkIndex + 1) * COMBINED_MAX_PAGES);
-      const pdf = new jsPDF("landscape", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-      chunk.forEach((unit, index) => {
-        if (!unit.previewImage) return;
-        if (index > 0) {
-          pdf.addPage();
-        }
-        pdf.addImage(unit.previewImage, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
-      });
-      const fileName =
-        chunkCount === 1 ? "certificados.pdf" : `certificados-parte-${chunkIndex + 1}.pdf`;
-      pdf.save(fileName);
-    }
-    return;
-  }
-
-  const files: { filename: string; data: ArrayBuffer }[] = [];
-  for (const unit of units) {
-    if (!unit.previewImage) {
-      continue;
-    }
-    const pdf = new jsPDF("landscape", "mm", "a4");
-    const pageWidth = pdf.internal.pageSize.getWidth();
-    const pageHeight = pdf.internal.pageSize.getHeight();
-    pdf.addImage(unit.previewImage, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
-    const data = pdf.output("arraybuffer");
-    const filename = `certificado-${unit.slug || unit.sequence}-${unit.sequence}.pdf`;
-    files.push({ filename, data });
-  }
-
-  if (!files.length) {
-    toast.error("Nao foi possivel gerar os PDF(s). Refaça o pedido.");
-    return;
-  }
-
-  if (files.length === 1) {
-    const [file] = files;
-    const blob = new Blob([file.data], { type: "application/pdf" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = file.filename;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    URL.revokeObjectURL(url);
-    return;
-  }
-
-  const zip = new JSZip();
-  for (const file of files) {
-    zip.file(file.filename, file.data);
-  }
-  const blob = await zip.generateAsync({ type: "blob" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = "certificados.zip";
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  URL.revokeObjectURL(url);
-}
 
 export function CartSheet() {
   const { isOpen, closeCart } = useCartSheet();
@@ -162,10 +18,6 @@ export function CartSheet() {
   const router = useRouter();
   const [checkingOut, setCheckingOut] = useState(false);
   const { data: session } = authClient.useSession();
-  const sessionUser = session?.user as { role?: string } | undefined;
-  const canFinishOffline = canFinalizeOffline(sessionUser?.role);
-  const [paymentMethod, setPaymentMethod] = useState<string>(offlinePaymentMethods[0]?.value ?? "dinheiro");
-  const [downloadMode, setDownloadMode] = useState<"individual" | "combined">("individual");
 
   useEffect(() => {
     if (!isOpen) return;
@@ -191,7 +43,7 @@ export function CartSheet() {
   const totalLabel = formatted?.pricing.total ?? "R$ 0,00";
   const unitLabel = formatted?.pricing.unitPrice ?? "R$ 0,00";
   const totalQuantity = formatted?.pricing.totalQuantity ?? 0;
-  const showLoginCta = Boolean(error && error.toLowerCase().includes("sessao"));
+  const showLoginCta = Boolean(!session && error && error.toLowerCase().includes("sessao"));
 
   const currency = useMemo(
     () => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }),
@@ -202,7 +54,7 @@ export function CartSheet() {
     try {
       await updateQuantity(itemId, 0);
     } catch {
-      // o hook ja exibe mensagens de erro
+      // erros tratados pelo provider
     }
   };
 
@@ -210,55 +62,34 @@ export function CartSheet() {
     try {
       await clear();
     } catch {
-      // erros tratados externamente
+      // ignorar
     }
   };
 
   const handleCheckout = async () => {
     if (!formatted || items.length === 0 || checkingOut) return;
-    if (!canFinishOffline) {
-      toast.info(
-        "O checkout online estará disponível em breve. Somente administradores e funcionários podem finalizar pagamentos presenciais durante os testes.",
-      );
+    if (bulkImporting) {
+      toast.info("Aguarde a importação dos certificados antes de finalizar o pedido.");
       return;
     }
     setCheckingOut(true);
-    const params = new URLSearchParams();
-    if (formatted.pricing.total) {
-      params.set("total", formatted.pricing.total);
-    }
-    if (formatted.pricing.totalQuantity) {
-      params.set("quantity", String(formatted.pricing.totalQuantity));
-    }
-    if (formatted.pricing.unitPrice) {
-      params.set("unit", formatted.pricing.unitPrice);
-    }
-    if (paymentMethod) {
-      params.set("method", paymentMethod);
-    }
     try {
-      const downloadPayload: MinimalCartItem[] = items.map((item) => ({
-        id: item.id,
-        certificateSlug: item.certificateSlug,
-        title: item.title,
-        quantity: item.quantity,
-        summary: item.summary,
-        previewImage: item.previewImage,
-        entries: item.entries?.map((entry) => ({
-          id: entry.id,
-          quantity: entry.quantity,
-          summary: entry.summary,
-          previewImage: entry.previewImage ?? item.previewImage,
-        })),
-      }));
-      await downloadCertificates(downloadPayload, downloadMode);
-      await clear();
-      closeCart();
-      const query = params.toString();
-      router.push(query ? `/obrigado?${query}` : "/obrigado");
-    } catch {
-      toast.error("Nao foi possivel finalizar o pedido. Tente novamente.");
-    } finally {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok || !data?.url) {
+        toast.error(data?.message ?? "Não foi possível iniciar o checkout.");
+        setCheckingOut(false);
+        return;
+      }
+      window.location.href = data.url as string;
+    } catch (error) {
+      console.error("Erro ao iniciar checkout:", error);
+      toast.error("Não foi possível iniciar o checkout. Tente novamente.");
       setCheckingOut(false);
     }
   };
@@ -284,7 +115,7 @@ export function CartSheet() {
         <header className="flex items-center justify-between border-b border-border/70 px-6 py-4">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-primary/70">Carrinho</p>
-            <p className="text-sm text-muted-foreground">Todos os certificados com o mesmo valor unitario.</p>
+            <p className="text-sm text-muted-foreground">Todos os certificados com o mesmo valor unitário.</p>
           </div>
           <div className="flex items-center gap-2">
             {items.length > 0 ? (
@@ -317,7 +148,9 @@ export function CartSheet() {
                 <ShoppingCart className="h-5 w-5 text-primary" />
               </div>
               <p className="text-base font-medium text-foreground">Carrinho vazio</p>
-              <p className="text-sm text-muted-foreground">{showLoginCta ? "Faca login para salvar certificados no carrinho." : "Crie um certificado e clique em adicionar ao carrinho."}</p>
+              <p className="text-sm text-muted-foreground">
+                {showLoginCta ? "Faça login para salvar certificados no carrinho." : "Crie um certificado e clique em adicionar ao carrinho."}
+              </p>
               {showLoginCta ? (
                 <Button asChild size="sm" className="mt-2">
                   <Link href="/login">
@@ -361,7 +194,7 @@ export function CartSheet() {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">Valor unitario {unitLabel}</span>
+                    <span className="font-medium text-foreground">Valor unitário {unitLabel}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveItem(item.id)}
@@ -385,7 +218,7 @@ export function CartSheet() {
               <span className="font-semibold text-foreground">{totalQuantity}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Valor unitario</span>
+              <span className="text-muted-foreground">Valor unitário</span>
               <span className="font-semibold text-foreground">{unitLabel}</span>
             </div>
             <Separator className="bg-border/80" />
@@ -394,64 +227,9 @@ export function CartSheet() {
               <span>{totalLabel}</span>
             </div>
           </div>
-          {canFinishOffline ? (
-            <div className="mt-4 space-y-2">
-              <Label htmlFor="paymentMethod" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
-                Forma de pagamento presencial
-              </Label>
-              <select
-                id="paymentMethod"
-                value={paymentMethod}
-                onChange={(event) => setPaymentMethod(event.target.value)}
-                className="w-full rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-              >
-                {offlinePaymentMethods.map((method) => (
-                  <option key={method.value} value={method.value}>
-                    {method.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <p className="mt-4 text-xs text-muted-foreground">
-              Checkout online em desenvolvimento. Apenas administradores e funcionários conseguem finalizar pagamentos neste ambiente de teste.
-            </p>
-          )}
-          <div className="mt-4 space-y-2">
-            <Label className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Entrega dos PDFs</Label>
-            <div className="space-y-2 text-sm text-muted-foreground">
-              <label className="flex cursor-pointer items-start gap-2 rounded-2xl border border-border/60 p-3 text-left">
-                <input
-                  type="radio"
-                  className="mt-1"
-                  value="individual"
-                  checked={downloadMode === "individual"}
-                  onChange={() => setDownloadMode("individual")}
-                />
-                <div>
-                  <p className="font-semibold text-foreground">PDFs individuais (ZIP)</p>
-                  <p className="text-xs text-muted-foreground">
-                    Cada certificado vira um PDF separado. Se houver vários, entregamos em um arquivo compactado.
-                  </p>
-                </div>
-              </label>
-              <label className="flex cursor-pointer items-start gap-2 rounded-2xl border border-border/60 p-3 text-left">
-                <input
-                  type="radio"
-                  className="mt-1"
-                  value="combined"
-                  checked={downloadMode === "combined"}
-                  onChange={() => setDownloadMode("combined")}
-                />
-                <div>
-                  <p className="font-semibold text-foreground">PDF único (até 25 páginas)</p>
-                  <p className="text-xs text-muted-foreground">
-                    Agrupa os certificados em um único arquivo. A cada 25 páginas geramos um novo PDF automaticamente.
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Você será redirecionado ao Stripe para concluir o pagamento. Após a confirmação, voltaremos automaticamente para liberar os certificados.
+          </p>
           <Button
             type="button"
             className="mt-3 w-full"
@@ -459,12 +237,10 @@ export function CartSheet() {
             onClick={handleCheckout}
           >
             {checkingOut
-              ? "Gerando seus PDFs..."
+              ? "Redirecionando..."
               : bulkImporting || mutating
                 ? "Importando certificados..."
-                : canFinishOffline
-                  ? "Finalizar pedido"
-                  : "Ir para checkout"}
+                : "Ir para pagamento"}
           </Button>
         </footer>
       </aside>
