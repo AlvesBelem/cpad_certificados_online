@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ChangeEvent } from "react";
+import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import jsPDF from "jspdf";
 import { Input } from "@/components/ui/input";
@@ -57,6 +57,7 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
   const [bulkRows, setBulkRows] = useState<ParsedRow[]>([]);
   const [isBatchGenerating, setIsBatchGenerating] = useState(false);
   const [batchProgress, setBatchProgress] = useState<{ processed: number; total: number } | null>(null);
+  const dataFormRef = useRef<HTMLDivElement | null>(null);
 
   const handleChange = (field: keyof Campos) => (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = event.target.value;
@@ -166,6 +167,9 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
   }, [bulkRows, capturePreviewImage, campos]);
 
   const bulkPdfCount = bulkRows.length ? Math.ceil(bulkRows.length / MAX_CERTIFICATES_PER_PDF) : 0;
+  const scrollToDataForm = useCallback(() => {
+    dataFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   return (
     <section className="certificate-print-root flex flex-col gap-6 print:block">
@@ -175,6 +179,8 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
         fields={BULK_FIELDS}
         onApplyRow={handleApplyBulkRow}
         onRowsChange={handleBulkRowsChange}
+        onAfterApplyRow={scrollToDataForm}
+        showManualOrder={false}
       />
 
       {bulkRows.length > 0 ? (
@@ -209,66 +215,80 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
         </div>
       ) : null}
 
-      <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
-        <div className="space-y-1">
-          <h3 className="text-lg font-semibold text-foreground">Dados do certificado</h3>
-          <p className="text-sm text-muted-foreground">Preencha os campos dinâmicos conforme a homenagem.</p>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="igreja">Igreja</Label>
-            <Input id="igreja" value={campos.igreja} onChange={handleChange("igreja")} />
+      <div
+        ref={dataFormRef}
+        className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden"
+      >
+        <form
+          className="space-y-4 rounded-2xl border border-primary/25 bg-primary/5 p-4"
+          onSubmit={(event) => event.preventDefault()}
+        >
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold text-foreground">Logomarca</h3>
+            <p className="text-sm text-muted-foreground">Informe uma URL ou envie a imagem da logo que aparecerá no topo.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="logoUrl">URL da logo (opcional)</Label>
+              <Input
+                id="logoUrl"
+                value={logoUrl}
+                onChange={(event) => setLogoUrl(event.target.value)}
+                placeholder="https://exemplo.com/logo.png"
+              />
+              <p className="text-xs text-muted-foreground">Usamos a logo padrão se este campo estiver vazio.</p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="logoUpload">Upload da logo (opcional)</Label>
+              <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} />
+              <p className="text-xs text-muted-foreground">PNG/JPG. Se não enviar, usamos a logo padrão.</p>
+            </div>
+          </div>
+        </form>
+        <form className="space-y-6" onSubmit={(event) => event.preventDefault()}>
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-foreground">Dados do certificado</h3>
+            <p className="text-sm text-muted-foreground">Preencha os campos dinâmicos conforme a homenagem.</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="igreja">Igreja</Label>
+              <Input id="igreja" value={campos.igreja} onChange={handleChange("igreja")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="congregacao">Congregação</Label>
+              <Input id="congregacao" value={campos.congregacao} onChange={handleChange("congregacao")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="nomeHomenageado">Nome da pessoa homenageada</Label>
+              <Input id="nomeHomenageado" value={campos.nomeHomenageado} onChange={handleChange("nomeHomenageado")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="pastor">Nome do Pastor</Label>
+              <Input id="pastor" value={campos.pastor} onChange={handleChange("pastor")} />
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="data">Data</Label>
+              <Input id="data" type="date" value={campos.data} onChange={handleChange("data")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cidade">Cidade/UF</Label>
+              <Input id="cidade" value={campos.cidade} onChange={handleChange("cidade")} />
+            </div>
           </div>
           <div className="space-y-2">
-            <Label htmlFor="congregacao">Congregação</Label>
-            <Input id="congregacao" value={campos.congregacao} onChange={handleChange("congregacao")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="nomeHomenageado">Nome da pessoa homenageada</Label>
-            <Input id="nomeHomenageado" value={campos.nomeHomenageado} onChange={handleChange("nomeHomenageado")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="pastor">Nome do Pastor</Label>
-            <Input id="pastor" value={campos.pastor} onChange={handleChange("pastor")} />
-          </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="data">Data</Label>
-            <Input id="data" type="date" value={campos.data} onChange={handleChange("data")} />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="cidade">Cidade/UF</Label>
-            <Input id="cidade" value={campos.cidade} onChange={handleChange("cidade")} />
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="observacao">Texto da homenagem</Label>
-          <Textarea
-            id="observacao"
-            rows={3}
-            value={campos.observacao}
-            onChange={handleChange("observacao")}
-            placeholder="pelos serviços realizados em prol da obra de Deus."
-          />
-        </div>
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="logoUrl">URL da logo (opcional)</Label>
-            <Input
-              id="logoUrl"
-              value={logoUrl}
-              onChange={(event) => setLogoUrl(event.target.value)}
-              placeholder="https://exemplo.com/logo.png"
+            <Label htmlFor="observacao">Texto da homenagem</Label>
+            <Textarea
+              id="observacao"
+              rows={3}
+              value={campos.observacao}
+              onChange={handleChange("observacao")}
+              placeholder="pelos serviços realizados em prol da obra de Deus."
             />
-            <p className="text-xs text-muted-foreground">Usamos a logo padrão se este campo estiver vazio.</p>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="logoUpload">Upload da logo (opcional)</Label>
-            <Input id="logoUpload" type="file" accept="image/*" onChange={handleLogoUpload} />
-            <p className="text-xs text-muted-foreground">PNG/JPG. Se não enviar, usamos a logo padrão.</p>
-          </div>
-        </div>
+        </form>
         <CertificateForm
           isShareSupported={isShareSupported}
           isGenerating={isGenerating}

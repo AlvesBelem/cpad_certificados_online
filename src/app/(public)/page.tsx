@@ -68,6 +68,12 @@ const certificatePreviews = [
     image: "/certificates/encontro-casais/certificado_casais.jpg",
     description: "Certificado romântico para eventos e encontros de casais.",
   },
+  {
+    title: "Honra ao Mérito Assembleia",
+    href: "/certificados/honra-merito-assembleia",
+    image: "/certificates/honra-merito-assembleia/certificado_honra_ao_merito.jpg",
+    description: "Certificado romântico para eventos e encontros de casais.",
+  },
 ];
 
 const steps = [

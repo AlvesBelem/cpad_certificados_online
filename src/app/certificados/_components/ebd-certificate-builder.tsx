@@ -103,7 +103,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataConclusaoFormatada 
         </aside>
       </div>
 
-      <div className="mt-2 grid gap-2 rounded-2xl border border-primary/10 bg-primary/5 p-1 text-center text-[11px] uppercase tracking-[0.3em] text-primary/70 md:grid-cols-3">
+      <div className="mt-8 grid gap-2 rounded-2xl border border-primary/10 bg-primary/5 p-1 text-center text-[11px] uppercase tracking-[0.3em] text-primary/70 md:grid-cols-3">
         <div className="space-y-1">
           <p>Trimestre</p>
           <p className="text-lg font-semibold tracking-tight text-primary/90">{trimestreDisplay}</p>
@@ -144,7 +144,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataConclusaoFormatada 
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 text-center text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-3">
+      <div className="mt-20 grid gap-6 text-center text-xs uppercase tracking-[0.4em] text-muted-foreground md:grid-cols-3">
         <div className="space-y-2">
           <p className="font-mono text-base tracking-[0.3em] text-foreground/80">{SIGNATURE_LINE}</p>
           <p className="text-sm font-semibold tracking-normal text-foreground">{superintendenteTexto}</p>

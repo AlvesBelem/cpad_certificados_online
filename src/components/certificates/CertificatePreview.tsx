@@ -5,8 +5,8 @@ import { ReactNode, RefObject, CSSProperties, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
 
-export const SCREEN_CERTIFICATE_WIDTH_MM = 279.168;
-export const SCREEN_CERTIFICATE_HEIGHT_MM = 174.979;
+export const SCREEN_CERTIFICATE_WIDTH_MM = 297; // alinhar pre-visualizacao ao tamanho A4 paisagem
+export const SCREEN_CERTIFICATE_HEIGHT_MM = 210;
 export const PRINT_CERTIFICATE_WIDTH_MM = 297; // A4 landscape width
 export const PRINT_CERTIFICATE_HEIGHT_MM = 210; // A4 landscape height
 
@@ -87,12 +87,12 @@ export function CertificatePreview({
     <div className={contentClass} style={contentStyle}>
       {showWatermark ? (
         <>
-          <div data-watermark="true" className="pointer-events-none absolute inset-0 z-10 opacity-60 mix-blend-multiply">
+          <div data-watermark="true" className="pointer-events-none absolute inset-0 z-50 opacity-60 mix-blend-multiply">
             <div className="h-full w-full bg-[radial-gradient(circle,_rgba(0,0,0,0.08)_1px,_transparent_1px)] bg-[length:32px_32px]" />
           </div>
           <div
             data-watermark="true"
-            className="pointer-events-none absolute inset-0 z-20 flex flex-wrap select-none text-center text-xs font-bold uppercase tracking-[0.3em] text-black/10 blur-[0.3px]"
+            className="pointer-events-none absolute inset-0 z-50 flex flex-wrap select-none text-center text-xs font-bold uppercase tracking-[0.3em] text-black/10 blur-[0.3px]"
           >
             {Array.from({ length: 40 }).map((_, index) => (
               <span key={index} className="m-3 rotate-[-20deg]">
