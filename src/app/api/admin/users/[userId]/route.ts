@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { normalizeRole, UserRole } from "@/lib/roles";
 import { requireSessionForAction } from "@/lib/session";
 
-const ALLOWED_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.EMPLOYEE, UserRole.USER];
+const ALLOWED_ROLES: UserRole[] = [UserRole.ADMIN, UserRole.FUNCIONARIO, UserRole.USUARIO];
 
 type RouteParams<T extends string> = { params: Promise<Record<T, string>> };
 

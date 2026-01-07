@@ -27,18 +27,18 @@ model Igreja {
 }
 
 model User {
-  id            String         @id @default(cuid())
+  id            String             @id @default(cuid())
   name          String?
-  email         String         @unique
+  email         String             @unique
   password      String?
   image         String?
-  role          String         @default("USER")
-  emailVerified Boolean        @default(false)
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  role          UserRole           @default(USUARIO)
+  emailVerified Boolean            @default(false)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
   igrejaId      String
-  igrejaStatus  String         @default("ATIVA")
-  igreja        Igreja         @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
+  igrejaStatus  String             @default("ATIVA")
+  igreja        Igreja             @relation(fields: [igrejaId], references: [id], onDelete: Cascade)
   accounts      Account[]
   sessions      Session[]
   verificacoes  Verification[]
@@ -116,17 +116,23 @@ model CertificateModel {
 }
 
 model CertificateOrder {
-  id                String   @id @default(cuid())
-  customerId        String?
-  customer          User?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  paymentMethod     String
-  totalAmountInCents Int     @default(0)
-  quantity          Int      @default(1)
-  status            String   @default("PAID")
-  notes             String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  customerId         String?
+  customer           User?    @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  paymentMethod      String
+  totalAmountInCents Int      @default(0)
+  quantity           Int      @default(1)
+  status             String   @default("PAID")
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@index([paymentMethod])
   @@index([createdAt])
+}
+
+enum UserRole {
+  ADMIN
+  FUNCIONARIO
+  USUARIO
 }

@@ -104,11 +104,11 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.findMany({
-      where: { role: UserRole.USER },
+      where: { role: UserRole.USUARIO },
       orderBy: { createdAt: "desc" },
     }),
     prisma.user.findMany({
-      where: { role: UserRole.EMPLOYEE },
+      where: { role: UserRole.FUNCIONARIO },
       orderBy: { createdAt: "desc" },
     }),
   ]);

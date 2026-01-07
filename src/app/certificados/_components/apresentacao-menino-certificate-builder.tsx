@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,10 +8,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
+import { BulkImportActions } from "@/components/certificates/bulk-import-actions";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
 import { useCertificateModelContext } from "@/contexts/certificate-model-context";
+import { useBulkCartImport } from "@/hooks/use-bulk-cart-import";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_LOGO = "/assets/logos/igreja.png";
@@ -217,15 +219,24 @@ export function ApresentacaoMeninoCertificateBuilder({ igrejaNome, logoPath, log
     summary: campos.nomeCrianca,
     getPreviewImage: capturePreviewImage,
   });
+  const {
+    bulkCertificateCount,
+    hasBulkRows,
+    processingBulk,
+    handleApplyBulkRow,
+    handleRowsChange,
+    handleBulkAddToCart,
+  } = useBulkCartImport<Campos>({
+    campos,
+    setCampos,
+    handleAddToCart,
+    summaryField: "nomeCrianca",
+  });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = event.target.value;
     setCampos((prev) => ({ ...prev, [field]: value }));
   };
-
-  const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
-    setCampos((prev) => ({ ...prev, ...row }));
-  }, []);
 
   const dataNascimentoFormatada = campos.dataNascimento
     ? new Date(campos.dataNascimento).toLocaleDateString("pt-BR")
@@ -242,7 +253,15 @@ export function ApresentacaoMeninoCertificateBuilder({ igrejaNome, logoPath, log
         certificateSlug={CERTIFICATE_SLUG}
         fields={BULK_FIELDS}
         onApplyRow={handleApplyBulkRow}
+        onRowsChange={handleRowsChange}
       />
+      <BulkImportActions
+        count={bulkCertificateCount}
+        processing={processingBulk}
+        isAdding={isAddingToCart}
+        onConfirm={handleBulkAddToCart}
+      />
+      {!hasBulkRows ? (
       <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
         <div className="space-y-4">
           <div className="space-y-2">
@@ -327,6 +346,7 @@ export function ApresentacaoMeninoCertificateBuilder({ igrejaNome, logoPath, log
           showGenerate={false}
         />
       </div>
+      ) : null}
 
       <CertificatePreview
         certificateRef={certificateRef}

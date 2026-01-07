@@ -53,10 +53,21 @@ function getNextThreshold(quantity: number) {
   return undefined;
 }
 
+function resolveItemQuantity(item: RawCartItem) {
+  const entriesTotal = item.entries?.reduce((sum, entry) => sum + Math.max(1, entry.quantity ?? 1), 0) ?? 0;
+  return entriesTotal > 0 ? entriesTotal : item.quantity;
+}
+
 export function computeCart(items: RawCartItem[]): { items: PricedCartItem[]; pricing: CartPricing } {
-  const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0);
+  const normalizedItems = items.map((item) => ({
+    ...item,
+    quantity: resolveItemQuantity(item),
+  }));
+
+  const totalQuantity = normalizedItems.reduce((sum, item) => sum + item.quantity, 0);
   const unitPriceCents = getUnitPriceCents(totalQuantity);
-  const pricedItems: PricedCartItem[] = items.map((item) => ({
+
+  const pricedItems: PricedCartItem[] = normalizedItems.map((item) => ({
     ...item,
     unitPriceCents,
     totalCents: unitPriceCents * item.quantity,

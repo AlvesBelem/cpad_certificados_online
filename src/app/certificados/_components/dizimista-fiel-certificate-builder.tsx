@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,9 +8,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useCertificatePDF } from "@/hooks/use-certificate-pdf";
 import { CertificatePreview } from "@/components/certificates/CertificatePreview";
 import { BulkImportPanel } from "@/components/certificates/bulk-import-panel";
+import { BulkImportActions } from "@/components/certificates/bulk-import-actions";
 import { resolveBulkFields } from "@/components/certificates/bulk-import-fields";
 import { useCertificateCartButton } from "@/hooks/use-certificate-cart-button";
 import { CertificateForm } from "./CertificateForm";
+import { useBulkCartImport } from "@/hooks/use-bulk-cart-import";
 
 const DEFAULT_LOGO = "/assets/logos/igreja.png";
 
@@ -142,6 +144,19 @@ export function DizimistaFielCertificateBuilder({ igrejaNome, logoPath, logoUrl 
     summary: campos.nomeMembro,
     getPreviewImage: capturePreviewImage,
   });
+  const {
+    bulkCertificateCount,
+    hasBulkRows,
+    processingBulk,
+    handleApplyBulkRow,
+    handleRowsChange,
+    handleBulkAddToCart,
+  } = useBulkCartImport<Campos>({
+    campos,
+    setCampos,
+    handleAddToCart,
+    summaryField: "nomeMembro",
+  });
 
   const handleChange = (field: keyof Campos) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = event.target.value;
@@ -154,10 +169,6 @@ export function DizimistaFielCertificateBuilder({ igrejaNome, logoPath, logoUrl 
     await handleGeneratePDF();
   };
 
-  const handleApplyBulkRow = useCallback((row: Record<string, string>) => {
-    setCampos((prev) => ({ ...prev, ...row }));
-  }, []);
-
   const logoSrc = useMemo(() => logoPath || logoUrl || DEFAULT_LOGO, [logoPath, logoUrl]);
 
   return (
@@ -167,7 +178,15 @@ export function DizimistaFielCertificateBuilder({ igrejaNome, logoPath, logoUrl 
         certificateSlug={CERTIFICATE_SLUG}
         fields={BULK_FIELDS}
         onApplyRow={handleApplyBulkRow}
+        onRowsChange={handleRowsChange}
       />
+      <BulkImportActions
+        count={bulkCertificateCount}
+        processing={processingBulk}
+        isAdding={isAddingToCart}
+        onConfirm={handleBulkAddToCart}
+      />
+      {!hasBulkRows ? (
       <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold text-foreground">Dados do certificado</h3>
@@ -217,6 +236,7 @@ export function DizimistaFielCertificateBuilder({ igrejaNome, logoPath, logoUrl 
           showGenerate={false}
         />
       </div>
+      ) : null}
 
       <CertificatePreview certificateRef={certificateRef} frameColor="#f7e9c5">
         <CertificateInner igrejaNome={igrejaNome} campos={campos} dataFormatada={dataFormatada} logoSrc={logoSrc} />

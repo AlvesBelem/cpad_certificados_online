@@ -49,6 +49,7 @@ export function BulkImportPanel({
         ...field,
         normalizedKey: normalizeValue(field.key),
         normalizedLabel: normalizeValue(field.label),
+        normalizedExample: normalizeValue(field.example ?? ""),
       })),
     [fields],
   );
@@ -89,14 +90,13 @@ export function BulkImportPanel({
         throw new Error("Nao encontramos linhas na planilha enviada.");
       }
       const headers = rawRows[0].map((cell) => normalizeValue(String(cell)));
-      const exampleRow = rawRows[1] ? rawRows[1].map((cell) => normalizeValue(String(cell))) : null;
       const rowsAfterHeader = rawRows.slice(1);
-      const dataRows =
-        exampleRow && rowsAfterHeader[0]
-          ? normalizeRow(rowsAfterHeader[0]).every((value, index) => value === exampleRow[index])
-            ? rowsAfterHeader.slice(1)
-            : rowsAfterHeader
-          : rowsAfterHeader;
+      const normalizedExampleReference = normalizedFields.map((field) => field.normalizedExample);
+      const shouldSkipExample =
+        normalizedExampleReference.some((value) => value) &&
+        rowsAfterHeader[0] &&
+        normalizeRow(rowsAfterHeader[0]).every((value, index) => value === normalizedExampleReference[index]);
+      const dataRows = shouldSkipExample ? rowsAfterHeader.slice(1) : rowsAfterHeader;
       const parsed = dataRows
         .map((cells) => mapRowFromSheet(cells, headers, normalizedFields))
         .filter((row) => Object.values(row).some((value) => value && value.trim().length > 0));
@@ -123,7 +123,12 @@ export function BulkImportPanel({
   const applyRow = (row: ParsedRow) => {
     onApplyRow(row);
     toast.success("Dados aplicados ao formulario. Revise antes de gerar o certificado.");
-    onAfterApplyRow?.();
+    if (onAfterApplyRow) {
+      onAfterApplyRow();
+    } else if (typeof document !== "undefined") {
+      const anchor = document.querySelector("[data-certificate-form-anchor]");
+      anchor?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   const clearRows = () => {
@@ -408,7 +413,7 @@ function detectDelimiter(text: string) {
 function mapRowFromSheet(
   row: string[],
   headers: string[],
-  fields: Array<BulkImportField & { normalizedKey: string; normalizedLabel: string }>,
+  fields: Array<BulkImportField & { normalizedKey: string; normalizedLabel: string; normalizedExample: string }>,
 ): ParsedRow {
   const parsed: ParsedRow = {};
   fields.forEach((field, defaultIndex) => {
