@@ -7,16 +7,35 @@ import { Loader2, LogIn, ShoppingCart, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
+import { normalizeRole, UserRole } from "@/lib/roles";
 import { useCartContext } from "./cart-provider";
 import { useCartSheet } from "./cart-sheet-context";
 import { cn } from "@/lib/utils";
+
+const MANUAL_PAYMENT_OPTIONS = [
+  { value: "DINHEIRO", label: "Dinheiro" },
+  { value: "PIX_MANUAL", label: "Pix (manual)" },
+  { value: "TRANSFERENCIA", label: "Transferencia" },
+] as const;
 
 export function CartSheet() {
   const { isOpen, closeCart } = useCartSheet();
   const { formatted, loading, mutating, error, updateQuantity, clear, bulkImporting } = useCartContext();
   const router = useRouter();
   const [checkingOut, setCheckingOut] = useState(false);
+  const [manualProcessing, setManualProcessing] = useState(false);
+  const [manualMethod, setManualMethod] = useState<string>(MANUAL_PAYMENT_OPTIONS[0].value);
+  const [manualNotes, setManualNotes] = useState("");
   const { data: session } = authClient.useSession();
 
   useEffect(() => {
@@ -50,11 +69,14 @@ export function CartSheet() {
     [],
   );
 
+  const normalizedRole = normalizeRole((session?.user as { role?: string } | undefined)?.role);
+  const shouldUseManualCheckout = normalizedRole === UserRole.ADMIN || normalizedRole === UserRole.FUNCIONARIO;
+
   const handleRemoveItem = async (itemId: string) => {
     try {
       await updateQuantity(itemId, 0);
     } catch {
-      // erros tratados pelo provider
+      // erros tratados no provider
     }
   };
 
@@ -66,10 +88,56 @@ export function CartSheet() {
     }
   };
 
+  const handleManualCheckout = async () => {
+    if (!formatted || items.length === 0 || manualProcessing) return;
+    if (bulkImporting) {
+      toast.info("Aguarde a importacao dos certificados antes de finalizar o pedido.");
+      return;
+    }
+    setManualProcessing(true);
+    try {
+      const manualItems = formatted.items.map((item) => ({
+        certificateSlug: item.certificateSlug,
+        title: item.title,
+        quantity: item.quantity,
+        unitPriceCents: item.unitPriceCents,
+        summary: item.summary ?? null,
+      }));
+      const response = await fetch("/api/admin/orders", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          paymentMethod: manualMethod,
+          status: "PAID",
+          quantity: formatted.pricing.totalQuantity,
+          totalAmountInCents: formatted.pricing.totalCents,
+          notes: manualNotes.trim() ? manualNotes.trim() : undefined,
+          items: manualItems,
+        }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(data?.message || "Nao foi possivel registrar o pagamento manual.");
+      }
+      toast.success("Pagamento manual registrado.");
+      setManualNotes("");
+      await clear();
+      closeCart();
+      router.refresh();
+    } catch (error) {
+      console.error("Erro ao registrar pagamento manual:", error);
+      toast.error(error instanceof Error ? error.message : "Nao foi possivel registrar o pagamento manual.");
+    } finally {
+      setManualProcessing(false);
+    }
+  };
+
   const handleCheckout = async () => {
     if (!formatted || items.length === 0 || checkingOut) return;
     if (bulkImporting) {
-      toast.info("Aguarde a importação dos certificados antes de finalizar o pedido.");
+      toast.info("Aguarde a importacao dos certificados antes de finalizar o pedido.");
       return;
     }
     setCheckingOut(true);
@@ -82,17 +150,23 @@ export function CartSheet() {
       });
       const data = await response.json().catch(() => null);
       if (!response.ok || !data?.url) {
-        toast.error(data?.message ?? "Não foi possível iniciar o checkout.");
+        toast.error(data?.message ?? "Nao foi possivel iniciar o checkout.");
         setCheckingOut(false);
         return;
       }
       window.location.href = data.url as string;
     } catch (error) {
       console.error("Erro ao iniciar checkout:", error);
-      toast.error("Não foi possível iniciar o checkout. Tente novamente.");
+      toast.error("Nao foi possivel iniciar o checkout. Tente novamente.");
       setCheckingOut(false);
     }
   };
+
+  const submitDisabled =
+    items.length === 0 ||
+    mutating ||
+    bulkImporting ||
+    (shouldUseManualCheckout ? manualProcessing : checkingOut);
 
   return (
     <>
@@ -115,7 +189,7 @@ export function CartSheet() {
         <header className="flex items-center justify-between border-b border-border/70 px-6 py-4">
           <div>
             <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-primary/70">Carrinho</p>
-            <p className="text-sm text-muted-foreground">Todos os certificados com o mesmo valor unitário.</p>
+            <p className="text-sm text-muted-foreground">Todos os certificados com o mesmo valor unitario.</p>
           </div>
           <div className="flex items-center gap-2">
             {items.length > 0 ? (
@@ -149,7 +223,7 @@ export function CartSheet() {
               </div>
               <p className="text-base font-medium text-foreground">Carrinho vazio</p>
               <p className="text-sm text-muted-foreground">
-                {showLoginCta ? "Faça login para salvar certificados no carrinho." : "Crie um certificado e clique em adicionar ao carrinho."}
+                {showLoginCta ? "Faca login para salvar certificados no carrinho." : "Crie um certificado e clique em adicionar ao carrinho."}
               </p>
               {showLoginCta ? (
                 <Button asChild size="sm" className="mt-2">
@@ -194,7 +268,7 @@ export function CartSheet() {
                     </div>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
-                    <span className="font-medium text-foreground">Valor unitário {unitLabel}</span>
+                    <span className="font-medium text-foreground">Valor unitario {unitLabel}</span>
                     <button
                       type="button"
                       onClick={() => handleRemoveItem(item.id)}
@@ -218,7 +292,7 @@ export function CartSheet() {
               <span className="font-semibold text-foreground">{totalQuantity}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">Valor unitário</span>
+              <span className="text-muted-foreground">Valor unitario</span>
               <span className="font-semibold text-foreground">{unitLabel}</span>
             </div>
             <Separator className="bg-border/80" />
@@ -228,19 +302,53 @@ export function CartSheet() {
             </div>
           </div>
           <p className="mt-4 text-xs text-muted-foreground">
-            Você será redirecionado ao Stripe para concluir o pagamento. Após a confirmação, voltaremos automaticamente para liberar os certificados.
+            {shouldUseManualCheckout
+              ? "Selecione o metodo utilizado no recebimento (dinheiro, Pix ou transferencia) e registre o pagamento manual."
+              : "Voce sera redirecionado ao Stripe para concluir o pagamento. Apos a confirmacao, retornaremos automaticamente para liberar os certificados."}
           </p>
+          {shouldUseManualCheckout ? (
+            <div className="mt-4 space-y-3 rounded-2xl border border-dashed border-border/60 p-3">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Forma de pagamento</Label>
+                <Select value={manualMethod} onValueChange={setManualMethod}>
+                  <SelectTrigger className="h-9 w-full">
+                    <SelectValue placeholder="Selecione" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {MANUAL_PAYMENT_OPTIONS.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Observacoes (opcional)</Label>
+                <Textarea
+                  value={manualNotes}
+                  onChange={(event) => setManualNotes(event.target.value)}
+                  rows={2}
+                  placeholder="Ex.: pago em dinheiro no balao"
+                />
+              </div>
+            </div>
+          ) : null}
           <Button
             type="button"
             className="mt-3 w-full"
-            disabled={items.length === 0 || mutating || checkingOut || bulkImporting}
-            onClick={handleCheckout}
+            disabled={submitDisabled}
+            onClick={shouldUseManualCheckout ? handleManualCheckout : handleCheckout}
           >
-            {checkingOut
-              ? "Redirecionando..."
-              : bulkImporting || mutating
-                ? "Importando certificados..."
-                : "Ir para pagamento"}
+            {shouldUseManualCheckout
+              ? manualProcessing
+                ? "Registrando pagamento..."
+                : "Registrar pagamento manual"
+              : checkingOut
+                ? "Redirecionando..."
+                : bulkImporting || mutating
+                  ? "Importando certificados..."
+                  : "Ir para pagamento"}
           </Button>
         </footer>
       </aside>

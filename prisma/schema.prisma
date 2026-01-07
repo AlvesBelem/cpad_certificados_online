@@ -31,6 +31,7 @@ model User {
   name          String?
   email         String             @unique
   password      String?
+  mustChangePassword Boolean       @default(false)
   image         String?
   role          UserRole           @default(USUARIO)
   emailVerified Boolean            @default(false)
@@ -126,9 +127,23 @@ model CertificateOrder {
   notes              String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+  items              CertificateOrderItem[]
 
   @@index([paymentMethod])
   @@index([createdAt])
+}
+
+model CertificateOrderItem {
+  id               String            @id @default(cuid())
+  orderId          String
+  certificateSlug  String
+  title            String
+  summary          String?
+  quantity         Int               @default(1)
+  unitPriceInCents Int               @default(0)
+  order            CertificateOrder  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }
 
 enum UserRole {
