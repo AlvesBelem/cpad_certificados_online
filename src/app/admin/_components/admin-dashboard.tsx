@@ -1019,22 +1019,24 @@ function PaymentMovements({ orders }: PaymentMovementsProps) {
     quantity: number;
   };
 
-  const grouped = Array.from(
-    orders.reduce<Map<string, PaymentGroup>>((map, order) => {
-      const method = (order.paymentMethod || "INDIFERENTE").toUpperCase();
-      const entry = map.get(method) ?? {
-        method,
-        orders: [],
-        totalAmount: 0,
-        quantity: 0,
-      };
-      entry.orders.push(order);
-      entry.totalAmount += order.totalAmount;
-      entry.quantity += order.quantity;
-      map.set(method, entry);
-      return map;
-    }, new Map()),
-  ).sort((a, b) => b.totalAmount - a.totalAmount);
+    const grouped = Array.from(
+      orders
+        .reduce<Map<string, PaymentGroup>>((map, order) => {
+          const method = (order.paymentMethod || "INDIFERENTE").toUpperCase();
+          const entry = map.get(method) ?? {
+            method,
+            orders: [],
+            totalAmount: 0,
+            quantity: 0,
+          };
+          entry.orders.push(order);
+          entry.totalAmount += order.totalAmount;
+          entry.quantity += order.quantity;
+          map.set(method, entry);
+          return map;
+        }, new Map())
+        .values(),
+    ).sort((a, b) => b.totalAmount - a.totalAmount);
 
   return (
     <div className="space-y-4">
