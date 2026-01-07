@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LogOut, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ const baseNavLinks = [{ href: "/certificados", label: "Modelos" }];
 
 export function SiteHeader() {
   const pathname = usePathname();
+  const router = useRouter();
   const { formatted } = useCartContext();
   const { openCart } = useCartSheet();
   const { data: session } = authClient.useSession();
@@ -35,6 +36,7 @@ export function SiteHeader() {
       setSigningOut(true);
       await authClient.signOut();
       toast.success("Voce saiu da conta.");
+      router.replace("/login");
     } catch (error) {
       console.error("Erro ao sair:", error);
       toast.error("Nao foi possivel sair. Tente novamente.");

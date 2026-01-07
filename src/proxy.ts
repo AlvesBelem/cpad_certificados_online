@@ -12,6 +12,7 @@ function isIgnoredPath(pathname: string) {
   return (
     pathname.startsWith("/_next") ||
     pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/webhooks") ||
     pathname.startsWith("/assets") ||
     pathname.startsWith("/certificates") ||
     pathname.startsWith("/uploads") ||
