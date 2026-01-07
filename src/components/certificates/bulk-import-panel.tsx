@@ -23,6 +23,7 @@ type Props = {
   onApplyRow: (row: Record<string, string>) => void;
   onRowsChange?: (rows: ParsedRow[]) => void;
   onAfterApplyRow?: () => void;
+  showManualOrder?: boolean;
 };
 
 export type ParsedRow = Record<string, string>;
@@ -34,6 +35,7 @@ export function BulkImportPanel({
   onApplyRow,
   onRowsChange,
   onAfterApplyRow,
+  showManualOrder = true,
 }: Props) {
   const [rows, setRows] = useState<ParsedRow[]>([]);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -145,6 +147,11 @@ export function BulkImportPanel({
           <p className="text-xs text-muted-foreground">
             Baixe o modelo, preencha as colunas e importe para aplicar rapidamente cada linha ao formulario do certificado.
           </p>
+          {showManualOrder ? (
+            <p className="text-[11px] text-muted-foreground">
+              Prefere preencher manualmente? Role ate o formulario e edite os campos individualmente.
+            </p>
+          ) : null}
         </div>
         <Button type="button" size="sm" variant="outline" onClick={handleDownloadTemplate}>
           <Download className="h-4 w-4" />
