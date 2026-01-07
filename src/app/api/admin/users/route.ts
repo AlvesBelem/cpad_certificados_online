@@ -15,7 +15,8 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message: "Acesso negado." }, { status: 403 });
   }
 
-  if (!session.user.igrejaId) {
+  const igrejaId = session.user.igrejaId;
+  if (!igrejaId) {
     return NextResponse.json({ message: "Administrador sem igreja vinculada." }, { status: 400 });
   }
 
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
           name,
           email,
           role: UserRole.FUNCIONARIO,
-          igrejaId: session.user.igrejaId,
+          igrejaId,
           igrejaStatus: session.user.igrejaStatus ?? "ATIVA",
           password: hashedPassword,
           mustChangePassword: true,
