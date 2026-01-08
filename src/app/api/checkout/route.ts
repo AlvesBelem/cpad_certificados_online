@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireSessionForAction } from "@/lib/session";
+import Stripe from "stripe";
 import { assertStripe } from "@/lib/stripe";
 import { getCartForUser } from "@/lib/cart-store";
 import { prisma } from "@/lib/prisma";
@@ -9,7 +10,7 @@ const DEFAULT_APP_URL = process.env.APP_URL || "http://localhost:3000";
 
 const DEFAULT_PAYMENT_METHODS = ["card", "pix", "link"];
 
-function resolvePaymentMethodTypes() {
+function resolvePaymentMethodTypes(): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
   const raw = process.env.STRIPE_PAYMENT_METHODS;
   const parsed = raw
     ? raw
@@ -21,7 +22,7 @@ function resolvePaymentMethodTypes() {
   const filtered = parsed.filter((method) => method.toLowerCase() !== "boleto");
   const unique = Array.from(new Set(filtered));
 
-  return unique.length > 0 ? unique : ["card"];
+  return unique.length > 0 ? (unique as Stripe.Checkout.SessionCreateParams.PaymentMethodType[]) : ["card"];
 }
 
 export async function POST() {

@@ -229,7 +229,16 @@ export function EbdAnualCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Bu
         certificateSlug={CERTIFICATE_SLUG}
         fields={BULK_FIELDS}
         onApplyRow={handleApplyBulkRow}
+        onRowsChange={handleRowsChange}
       />
+      <BulkImportActions
+        count={bulkCertificateCount}
+        processing={processingBulk}
+        isAdding={isAddingToCart}
+        onConfirm={handleBulkAddToCart}
+        description="Cada linha importada gera um certificado anual."
+      />
+      {!hasBulkRows ? (
       <div className="space-y-6 rounded-3xl border border-border bg-background/70 p-6 shadow-sm print:hidden">
         <div className="space-y-1">
           <h3 className="text-lg font-semibold text-foreground">Dados do certificado</h3>
@@ -296,6 +305,7 @@ export function EbdAnualCertificateBuilder({ igrejaNome, logoPath, logoUrl }: Bu
           showGenerate={false}
         />
       </div>
+      ) : null}
 
       <CertificatePreview certificateRef={certificateRef} frameColor="#e5ecf5">
         <CertificateInner logoSrc={logoSrc} igrejaNome={igrejaNome} campos={campos} dataConclusaoFormatada={dataConclusaoFormatada} />

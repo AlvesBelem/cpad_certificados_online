@@ -23,7 +23,7 @@ type UseBulkCartImportOptions<T> = {
   summaryField?: keyof T;
 };
 
-type UseBulkCartImportResult<T> = {
+type UseBulkCartImportResult = {
   bulkRows: ParsedRow[];
   hasBulkRows: boolean;
   bulkCertificateCount: number;
@@ -42,7 +42,7 @@ export function useBulkCartImport<T>({
   emptyMessage = "Importe a planilha antes de adicionar ao carrinho.",
   successMessage = (count) => `${count} certificado(s) adicionados ao carrinho.`,
   summaryField,
-}: UseBulkCartImportOptions<T>): UseBulkCartImportResult<T> {
+}: UseBulkCartImportOptions<T>): UseBulkCartImportResult {
   const [bulkRows, setBulkRows] = useState<ParsedRow[]>([]);
   const [processingBulk, setProcessingBulk] = useState(false);
   const camposRef = useRef(campos);
