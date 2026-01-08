@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { normalizeRole } from "@/lib/roles";
 
 const appUrl = getAppUrl();
-const appHost = new URL(appUrl).hostname;
+const appUrlObject = new URL(appUrl);
+const appHost = appUrlObject.hostname;
+const isHttps = appUrlObject.protocol === "https:";
 
 export const auth = betterAuth({
   appName: "AdiGreja",
@@ -48,7 +50,7 @@ export const auth = betterAuth({
       name: "better-auth.session_token",
       domain: appHost,
       sameSite: "lax",
-      secure: true,
+      secure: isHttps,
       httpOnly: true,
       path: "/",
     },
@@ -89,7 +91,7 @@ export const auth = betterAuth({
               ...user,
               igrejaId: igreja.id,
               igrejaStatus: igreja.status,
-              role: "ADMIN", // Primeiro usuario criado vira ADMIN
+              role: "USUARIO",
               mustChangePassword: false,
             },
           };

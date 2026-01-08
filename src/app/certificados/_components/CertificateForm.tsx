@@ -59,7 +59,7 @@ export function CertificateForm({
                     <Button
                         type="button"
                         size="sm"
-                        className="flex-1 bg-emerald-700 text-white hover:bg-emerald-800"
+                        className="flex-1"
                         onClick={handleGenerateClick}
                         disabled={isGenerating || !canSubmit}
                     >
@@ -83,7 +83,7 @@ export function CertificateForm({
                 {showGenerate && (
                     <Button
                         type="button"
-                        className="flex-1 bg-emerald-700 text-white hover:bg-emerald-800"
+                        className="flex-1"
                         onClick={handleGenerateClick}
                         disabled={isGenerating || !canSubmit}
                     >

@@ -257,7 +257,7 @@ function TemplateGrid() {
               <p className="text-sm leading-relaxed text-muted-foreground">{activeItem.description}</p>
               <div className="flex flex-wrap gap-3 text-xs text-muted-foreground">
                 <span className="rounded-full bg-primary/10 px-3 py-1 text-primary">Campos editáveis</span>
-                <span className="rounded-full bg-emerald-100/60 px-3 py-1 text-emerald-700">PDF imediato</span>
+                <span className="rounded-full bg-primary/15 px-3 py-1 text-primary">PDF imediato</span>
                 <span className="rounded-full bg-slate-200/70 px-3 py-1 text-slate-700">Fiel ao layout original</span>
               </div>
             </div>

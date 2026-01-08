@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import { redirect } from "next/navigation";
+import { getSession } from "@/lib/session";
 import { LoginContent } from "./login-content";
 
 function LoginPageFallback() {
@@ -11,7 +13,11 @@ function LoginPageFallback() {
   );
 }
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const session = await getSession();
+  if (session?.user) {
+    redirect("/certificados");
+  }
   return (
     <Suspense fallback={<LoginPageFallback />}>
       <LoginContent />

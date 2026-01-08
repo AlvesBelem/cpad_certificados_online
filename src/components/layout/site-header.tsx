@@ -47,13 +47,18 @@ export function SiteHeader() {
 
   const userRole = (user as { role?: string } | undefined)?.role;
 
+  const normalizedRole = normalizeRole(userRole);
+
   const links = useMemo(() => {
     const items = [...baseNavLinks];
-    if (normalizeRole(userRole) === UserRole.ADMIN) {
+    if (normalizedRole === UserRole.USUARIO) {
+      items.push({ href: "/billing/pedidos", label: "Pedidos" });
+    }
+    if (normalizedRole === UserRole.ADMIN) {
       items.push({ href: "/admin", label: "Admin" });
     }
     return items;
-  }, [userRole]);
+  }, [normalizedRole]);
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-background/80 backdrop-blur">

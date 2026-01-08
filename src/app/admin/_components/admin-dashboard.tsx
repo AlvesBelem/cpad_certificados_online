@@ -20,6 +20,7 @@ import type {
   ReportRow,
 } from "@/lib/admin-dashboard";
 import { UserRole } from "@/lib/roles";
+import { formatPaymentMethodLabel } from "@/lib/payment-method-label";
 
 import { cn } from "@/lib/utils";
 
@@ -619,7 +620,7 @@ function SalesSection({ orders }: SalesSectionProps) {
                 <SelectContent>
                   {paymentOptions.map((option) => (
                     <SelectItem key={option} value={option}>
-                      {option === "all" ? "Todas" : option.replace(/[_-]/g, " ").toLowerCase()}
+                      {option === "all" ? "Todas" : formatPaymentMethodLabel(option)}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -673,7 +674,7 @@ function SalesSection({ orders }: SalesSectionProps) {
                             <TableCell>{dateFormatter.format(new Date(order.createdAt))}</TableCell>
                             <TableCell className="font-semibold">{formatStatus(order.status)}</TableCell>
                             <TableCell className="capitalize">
-                              {(order.paymentMethod || "indiferente").replace(/[_-]/g, " ").toLowerCase()}
+                              {formatPaymentMethodLabel(order.paymentMethod)}
                             </TableCell>
                             <TableCell>{order.quantity}</TableCell>
                             <TableCell className="font-semibold">
@@ -1041,7 +1042,7 @@ function PaymentMovements({ orders }: PaymentMovementsProps) {
   return (
     <div className="space-y-4">
       {grouped.map((group) => {
-        const readableMethod = (group.method || "INDIFERENTE").replace(/[_-]/g, " ").toLowerCase();
+        const readableMethod = formatPaymentMethodLabel(group.method);
         const orderCount = Array.isArray(group.orders) ? group.orders.length : 0;
         const certificateCount = typeof group.quantity === "number" ? group.quantity : 0;
         const orderList = Array.isArray(group.orders) ? group.orders : [];
@@ -1068,7 +1069,7 @@ function PaymentMovements({ orders }: PaymentMovementsProps) {
                       <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
                         {dateFormatter.format(new Date(order.createdAt))}
                       </p>
-                      <p className="text-xs text-muted-foreground">Status: {order.status.toLowerCase()}</p>
+                      <p className="text-xs text-muted-foreground">Status: {formatStatus(order.status)}</p>
                     </div>
                     <div className="text-right text-sm font-semibold text-foreground">
                       {currencyFormatter.format(order.totalAmount)}
