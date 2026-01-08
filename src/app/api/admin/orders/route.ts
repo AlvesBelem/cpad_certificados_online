@@ -2,6 +2,15 @@ import { NextResponse, type NextRequest } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireSessionForAction } from "@/lib/session";
+import { persistOrderItems } from "@/lib/order-items";
+
+const orderItemSchema = z.object({
+  certificateSlug: z.string().min(1, "Informe o certificado."),
+  title: z.string().min(1, "Informe o titulo do certificado."),
+  quantity: z.number().int().positive(),
+  unitPriceCents: z.number().int().nonnegative(),
+  summary: z.string().optional().nullable(),
+});
 
 const createOrderSchema = z.object({
   paymentMethod: z.string().min(2, "Informe a forma de pagamento."),
@@ -10,6 +19,7 @@ const createOrderSchema = z.object({
   totalAmountInCents: z.number().int().nonnegative().default(0),
   notes: z.string().optional(),
   customerId: z.string().optional(),
+  items: z.array(orderItemSchema).min(1, "Informe os itens do pedido."),
 });
 
 export async function POST(request: NextRequest) {
@@ -32,6 +42,8 @@ export async function POST(request: NextRequest) {
         customer: { select: { email: true } },
       },
     });
+
+    await persistOrderItems(order.id, parsed.items);
 
     return NextResponse.json({
       order: {

@@ -33,6 +33,11 @@ export const auth = betterAuth({
         required: true,
         defaultValue: "ATIVA",
       },
+      mustChangePassword: {
+        type: "boolean",
+        required: true,
+        defaultValue: false,
+      },
     },
   },
   session: {
@@ -85,6 +90,7 @@ export const auth = betterAuth({
               igrejaId: igreja.id,
               igrejaStatus: igreja.status,
               role: "ADMIN", // Primeiro usuario criado vira ADMIN
+              mustChangePassword: false,
             },
           };
         },
@@ -109,6 +115,7 @@ export const auth = betterAuth({
             igrejaId: igreja?.id ?? user.igrejaId ?? null,
             role: normalizeRole(user.role),
             igrejaStatus: igreja?.status ?? user.igrejaStatus ?? null,
+            mustChangePassword: Boolean(user.mustChangePassword),
           };
         },
       },

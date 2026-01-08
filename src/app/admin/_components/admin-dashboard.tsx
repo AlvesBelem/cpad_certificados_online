@@ -216,7 +216,12 @@ export function AdminDashboard({ data, adminName }: AdminDashboardProps) {
       case "sales":
         return <SalesSection orders={orders} />;
       case "payments":
-        return <PaymentBreakdownCard items={data.paymentBreakdown} />;
+        return (
+          <div className="space-y-6">
+            <PaymentBreakdownCard items={data.paymentBreakdown} />
+            <PaymentMovements orders={orders} />
+          </div>
+        );
       case "reports":
 
         return <ReportsCard reports={data.reports} />;
@@ -705,7 +710,7 @@ function SalesSection({ orders }: SalesSectionProps) {
                           {item.method.replace(/[_-]/g, " ").toLowerCase()}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {item.paidOrders} pagos de {item.totalOrders} pedidos � {item.certificates} certificados
+                          {item.paidOrders} pagos de {item.totalOrders} pedidos - {item.certificates} certificados
                         </p>
                       </div>
                       <span className="text-base font-semibold">
@@ -964,7 +969,7 @@ function PaymentBreakdownCard({ items }: PaymentBreakdownCardProps) {
 
                 <p className="text-xs text-muted-foreground">
 
-                  {item.paidOrders} pagos de {item.totalOrders} pedidos � {item.certificates} certificados
+                  {item.paidOrders} pagos de {item.totalOrders} pedidos - {item.certificates} certificados
 
                 </p>
 
@@ -984,6 +989,120 @@ function PaymentBreakdownCard({ items }: PaymentBreakdownCardProps) {
 
   );
 
+}
+
+type PaymentMovementsProps = {
+  orders: OrderSummary[];
+};
+
+function PaymentMovements({ orders }: PaymentMovementsProps) {
+  if (orders.length === 0) {
+    return (
+      <Card className="border-border/70">
+        <CardHeader>
+          <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Movimentacoes</p>
+          <CardTitle className="text-lg">Nenhum pedido registrado</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground">
+            Assim que os pedidos forem registrados, eles aparecem aqui agrupados por forma de pagamento.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  type PaymentGroup = {
+    method: string;
+    orders: OrderSummary[];
+    totalAmount: number;
+    quantity: number;
+  };
+
+    const grouped = Array.from(
+      orders
+        .reduce<Map<string, PaymentGroup>>((map, order) => {
+          const method = (order.paymentMethod || "INDIFERENTE").toUpperCase();
+          const entry = map.get(method) ?? {
+            method,
+            orders: [],
+            totalAmount: 0,
+            quantity: 0,
+          };
+          entry.orders.push(order);
+          entry.totalAmount += order.totalAmount;
+          entry.quantity += order.quantity;
+          map.set(method, entry);
+          return map;
+        }, new Map())
+        .values(),
+    ).sort((a, b) => b.totalAmount - a.totalAmount);
+
+  return (
+    <div className="space-y-4">
+      {grouped.map((group) => {
+        const readableMethod = (group.method || "INDIFERENTE").replace(/[_-]/g, " ").toLowerCase();
+        const orderCount = Array.isArray(group.orders) ? group.orders.length : 0;
+        const certificateCount = typeof group.quantity === "number" ? group.quantity : 0;
+        const orderList = Array.isArray(group.orders) ? group.orders : [];
+        return (
+          <Card key={group.method} className="border-border/60">
+            <CardHeader>
+              <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Movimentacoes</p>
+              <CardTitle className="text-lg capitalize">{readableMethod}</CardTitle>
+              <p className="text-xs text-muted-foreground">
+                {orderCount} pedido(s) · {certificateCount} certificado(s)
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {orderList.map((order) => (
+                <div key={order.id} className="rounded-xl border border-border/60 p-3">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        Pedido {order.id.slice(-6).toUpperCase()}
+                      </p>
+                      {order.customerEmail ? (
+                        <p className="text-xs text-muted-foreground">{order.customerEmail}</p>
+                      ) : null}
+                      <p className="text-[11px] uppercase tracking-[0.3em] text-muted-foreground">
+                        {dateFormatter.format(new Date(order.createdAt))}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Status: {order.status.toLowerCase()}</p>
+                    </div>
+                    <div className="text-right text-sm font-semibold text-foreground">
+                      {currencyFormatter.format(order.totalAmount)}
+                      <p className="text-xs text-muted-foreground">{order.quantity} certificado(s)</p>
+                    </div>
+                  </div>
+                  {order.items.length ? (
+                    <div className="mt-3 rounded-lg border border-border/40 bg-muted/40 p-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-muted-foreground">
+                        Produtos
+                      </p>
+                      <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        {order.items.map((item) => (
+                          <li key={item.id} className="flex items-center justify-between gap-3">
+                            <span className="truncate">
+                              {item.title}
+                              {item.summary ? ` · ${item.summary}` : ""}
+                            </span>
+                            <span className="text-foreground">
+                              {item.quantity}x {currencyFormatter.format(item.unitPrice)}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
 }
 
 
@@ -1754,7 +1873,21 @@ function CreateEmployeeDialog({ open, onOpenChange, onCreated }: CreateEmployeeD
 
       email: (formData.get("employeeEmail") ?? "").toString().trim().toLowerCase(),
 
+      password: (formData.get("employeePassword") ?? "").toString(),
+
+      confirmPassword: (formData.get("employeePasswordConfirm") ?? "").toString(),
+
     };
+
+    if (payload.password.length < 8) {
+      setError("A senha temporaria deve ter pelo menos 8 caracteres.");
+      return;
+    }
+
+    if (payload.password !== payload.confirmPassword) {
+      setError("As senhas informadas nao conferem.");
+      return;
+    }
 
 
 
@@ -1768,7 +1901,11 @@ function CreateEmployeeDialog({ open, onOpenChange, onCreated }: CreateEmployeeD
 
         headers: { "Content-Type": "application/json" },
 
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          name: payload.name,
+          email: payload.email,
+          password: payload.password,
+        }),
 
       });
 
@@ -1829,6 +1966,60 @@ function CreateEmployeeDialog({ open, onOpenChange, onCreated }: CreateEmployeeD
             <Input id="employeeName" name="employeeName" placeholder="Nome completo" required disabled={isSubmitting} />
 
           </div>
+
+          <div className="space-y-2">
+
+            <Label htmlFor="employeePassword">Senha temporaria</Label>
+
+            <Input
+
+              id="employeePassword"
+
+              name="employeePassword"
+
+              type="password"
+
+              minLength={8}
+
+              placeholder="Minimo 8 caracteres"
+
+              required
+
+              disabled={isSubmitting}
+
+            />
+
+          </div>
+
+          <div className="space-y-2">
+
+            <Label htmlFor="employeePasswordConfirm">Confirmar senha</Label>
+
+            <Input
+
+              id="employeePasswordConfirm"
+
+              name="employeePasswordConfirm"
+
+              type="password"
+
+              minLength={8}
+
+              placeholder="Repita a senha"
+
+              required
+
+              disabled={isSubmitting}
+
+            />
+
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+
+            Compartilhe a senha temporaria com o funcionario. No primeiro acesso ele precisara definir uma nova senha.
+
+          </p>
 
           <div className="space-y-2">
 

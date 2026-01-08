@@ -46,6 +46,15 @@ export type ReportRow = {
   totalCertificates: number;
 };
 
+export type OrderItemSummary = {
+  id: string;
+  certificateSlug: string;
+  title: string;
+  quantity: number;
+  unitPrice: number;
+  summary?: string | null;
+};
+
 export type AdminDashboardData = {
   totals: {
     totalRevenue: number;
@@ -71,6 +80,7 @@ export type OrderSummary = {
   quantity: number;
   createdAt: string;
   customerEmail: string | null;
+  items: OrderItemSummary[];
 };
 
 type UserWithRole = {
@@ -98,7 +108,19 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   const [orders, models, clients, employees] = await Promise.all([
     prisma.certificateOrder.findMany({
       orderBy: { createdAt: "desc" },
-      include: { customer: { select: { email: true } } },
+      include: {
+        customer: { select: { email: true } },
+        items: {
+          select: {
+            id: true,
+            certificateSlug: true,
+            title: true,
+            quantity: true,
+            unitPriceInCents: true,
+            summary: true,
+          },
+        },
+      },
     }),
     prisma.certificateModel.findMany({
       orderBy: { createdAt: "desc" },
@@ -204,6 +226,14 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       quantity: order.quantity,
       createdAt: order.createdAt.toISOString(),
       customerEmail: order.customer?.email ?? null,
+      items: order.items.map((item) => ({
+        id: item.id,
+        certificateSlug: item.certificateSlug,
+        title: item.title,
+        quantity: item.quantity,
+        unitPrice: item.unitPriceInCents / 100,
+        summary: item.summary,
+      })),
     })),
     clients: clients.map(formatUser),
     employees: employees.map(formatUser),

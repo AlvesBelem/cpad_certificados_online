@@ -1,10 +1,29 @@
 import { NextResponse } from "next/server";
 import { requireSessionForAction } from "@/lib/session";
+import Stripe from "stripe";
 import { assertStripe } from "@/lib/stripe";
 import { getCartForUser } from "@/lib/cart-store";
 import { prisma } from "@/lib/prisma";
+import { persistOrderItems } from "@/lib/order-items";
 
 const DEFAULT_APP_URL = process.env.APP_URL || "http://localhost:3000";
+
+const DEFAULT_PAYMENT_METHODS = ["card", "pix", "link"];
+
+function resolvePaymentMethodTypes(): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
+  const raw = process.env.STRIPE_PAYMENT_METHODS;
+  const parsed = raw
+    ? raw
+        .split(",")
+        .map((method) => method.trim())
+        .filter(Boolean)
+    : DEFAULT_PAYMENT_METHODS;
+
+  const filtered = parsed.filter((method) => method.toLowerCase() !== "boleto");
+  const unique = Array.from(new Set(filtered));
+
+  return unique.length > 0 ? (unique as Stripe.Checkout.SessionCreateParams.PaymentMethodType[]) : ["card"];
+}
 
 export async function POST() {
   try {
@@ -25,6 +44,17 @@ export async function POST() {
         totalAmountInCents: cart.pricing.totalCents,
       },
     });
+
+    await persistOrderItems(
+      order.id,
+      cart.items.map((item) => ({
+        certificateSlug: item.certificateSlug,
+        title: item.title,
+        quantity: item.quantity,
+        unitPriceCents: item.unitPriceCents,
+        summary: item.summary,
+      })),
+    );
 
     const lineItems = cart.items.map((item) => ({
       price_data: {
@@ -47,7 +77,7 @@ export async function POST() {
 
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
-      payment_method_types: ["card"],
+      payment_method_types: resolvePaymentMethodTypes(),
       line_items: lineItems,
       metadata,
       client_reference_id: order.id,
