@@ -187,20 +187,20 @@ export function LoginContent() {
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p className="flex items-center gap-2 text-foreground">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              1 a 10 certificados: R$ 2,50 cada (250 centavos)
+              1 a 10 certificados: R$ 2,50 cada
             </p>
             <p className="flex items-center gap-2 text-foreground">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              11 a 50 certificados: R$ 2,00 cada (200 centavos)
+              11 a 50 certificados: R$ 2,00 cada
             </p>
             <p className="flex items-center gap-2 text-foreground">
               <CheckCircle2 className="h-4 w-4 text-primary" />
-              51+ certificados: R$ 1,80 cada (180 centavos)
+              51+ certificados: R$ 1,80 cada
             </p>
             <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
               <p className="flex items-center gap-2 font-semibold text-foreground">
                 <Sparkles className="h-4 w-4 text-primary" />
-                Sugestao inteligente
+                Sugestão inteligente
               </p>
               <p className="mt-1 text-xs">
                 Se faltar 1 certificado para mudar de faixa, avisamos para voce aproveitar o desconto.
@@ -227,3 +227,4 @@ export function LoginContent() {
     </main>
   );
 }
+

@@ -19,7 +19,7 @@ async function getStripeSummary(sessionId?: string) {
       method: session.payment_method_types?.[0],
     };
   } catch (error) {
-    console.error("Falha ao recuperar sess?o do Stripe:", error);
+    console.error("Falha ao recuperar sessão do Stripe:", error);
     return null;
   }
 }
@@ -50,14 +50,14 @@ export default async function ThankYouPage({ searchParams }: ThankYouPageProps) 
         <p className="text-sm font-semibold uppercase tracking-[0.3em] text-primary/70">Pagamento confirmado</p>
         <h1 className="text-3xl font-bold text-foreground md:text-4xl">Obrigado pela sua compra!</h1>
         <p className="text-sm text-muted-foreground">
-          Recebemos a confirma??o do Stripe. Enquanto processamos o pedido, voc? pode continuar editando seus certificados normalmente.
+          Recebemos a confirmação do Stripe. Enquanto processamos o pedido, você pode continuar editando seus certificados normalmente.
         </p>
       </header>
 
       <section className="grid gap-6 md:grid-cols-[1.1fr,0.9fr]">
         <Card className="border-border/60 bg-card/80 shadow-sm">
           <CardHeader>
-            <CardTitle>Resumo da emiss?o</CardTitle>
+            <CardTitle>Resumo da emissão</CardTitle>
             <CardDescription>Utilize estes dados para acompanhar o processamento do pedido.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-foreground">
@@ -66,7 +66,7 @@ export default async function ThankYouPage({ searchParams }: ThankYouPageProps) 
                 <p className="text-xs uppercase tracking-[0.3em] text-muted-foreground">Certificados</p>
                 <p className="text-lg font-semibold">{quantity}</p>
               </div>
-              <span className="text-xs text-muted-foreground">Valor unit?rio {unit}</span>
+              <span className="text-xs text-muted-foreground">Valor unitário {unit}</span>
             </div>
             <div className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/70 px-4 py-3">
               <div>
@@ -89,8 +89,8 @@ export default async function ThankYouPage({ searchParams }: ThankYouPageProps) 
 
         <Card className="border-dashed border-border/60 bg-primary/5">
           <CardHeader>
-            <CardTitle>Pr?ximos passos</CardTitle>
-            <CardDescription>Conclua os certificados e fa?a o download quando estiverem prontos.</CardDescription>
+            <CardTitle>Próximos passos</CardTitle>
+            <CardDescription>Conclua os certificados e faça o download quando estiverem prontos.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
             <p>1. Volte aos modelos e finalize os dados de cada pessoa.</p>

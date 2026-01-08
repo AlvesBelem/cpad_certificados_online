@@ -109,7 +109,7 @@ function CertificateInner({ logoSrc, igrejaNome, campos, dataFormatada }: Certif
 
       {/* Certificate text */}
       <div className="mt-8 flex flex-1 flex-col gap-8 text-left lg:flex-row lg:items-start lg:gap-12">
-        <aside className="rounded-3xl bg-lime-100 p-6 lg:w-64 lg:flex-shrink-0">
+        <aside className="rounded-3xl bg-primary/10 p-6 lg:w-64 lg:flex-shrink-0">
           <p className="text-xs uppercase tracking-[0.4em] text-primary/60">Versículo</p>
           <div className="mt-3 h-px w-12 bg-primary/40" />
           <blockquote className="mt-4 text-base leading-relaxed text-primary/80">

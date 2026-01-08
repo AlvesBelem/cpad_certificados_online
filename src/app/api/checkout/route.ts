@@ -9,6 +9,13 @@ import { persistOrderItems } from "@/lib/order-items";
 const DEFAULT_APP_URL = process.env.APP_URL || "http://localhost:3000";
 
 const DEFAULT_PAYMENT_METHODS = ["card", "pix", "link"];
+const allowPixCheckout = process.env.STRIPE_ENABLE_PIX === "true";
+const checkoutSubmitMessage = process.env.STRIPE_CHECKOUT_SUBMIT_MESSAGE?.trim();
+const checkoutAfterMessage = process.env.STRIPE_CHECKOUT_AFTER_MESSAGE?.trim();
+const checkoutNoteLabel = process.env.STRIPE_CHECKOUT_NOTE_LABEL?.trim();
+const checkoutNoteOptional = process.env.STRIPE_CHECKOUT_NOTE_OPTIONAL !== "false";
+const checkoutNoteMaxLength = Number.parseInt(process.env.STRIPE_CHECKOUT_NOTE_MAX_LENGTH ?? "120", 10);
+const checkoutNoteDefaultValue = process.env.STRIPE_CHECKOUT_NOTE_DEFAULT?.trim() ?? "";
 
 function resolvePaymentMethodTypes(): Stripe.Checkout.SessionCreateParams.PaymentMethodType[] {
   const raw = process.env.STRIPE_PAYMENT_METHODS;
@@ -19,10 +26,46 @@ function resolvePaymentMethodTypes(): Stripe.Checkout.SessionCreateParams.Paymen
         .filter(Boolean)
     : DEFAULT_PAYMENT_METHODS;
 
-  const filtered = parsed.filter((method) => method.toLowerCase() !== "boleto");
+  const filtered = parsed.filter((method) => {
+    const normalized = method.toLowerCase();
+    if (normalized === "boleto") return false;
+    if (!allowPixCheckout && normalized === "pix") return false;
+    return true;
+  });
   const unique = Array.from(new Set(filtered));
 
   return unique.length > 0 ? (unique as Stripe.Checkout.SessionCreateParams.PaymentMethodType[]) : ["card"];
+}
+
+function buildCustomText(): Stripe.Checkout.SessionCreateParams.CustomText | undefined {
+  const customText: Stripe.Checkout.SessionCreateParams.CustomText = {};
+  if (checkoutSubmitMessage) {
+    customText.submit = { message: checkoutSubmitMessage };
+  }
+  if (checkoutAfterMessage) {
+    customText.after_submit = { message: checkoutAfterMessage };
+  }
+  return Object.keys(customText).length ? customText : undefined;
+}
+
+function buildCustomFields(): Stripe.Checkout.SessionCreateParams.CustomField[] {
+  if (!checkoutNoteLabel) return [];
+  const maximumLength = Number.isFinite(checkoutNoteMaxLength) && checkoutNoteMaxLength > 0 ? checkoutNoteMaxLength : 120;
+  return [
+    {
+      key: "igreja_observacoes",
+      label: {
+        type: "custom",
+        custom: checkoutNoteLabel,
+      },
+      type: "text",
+      optional: checkoutNoteOptional,
+      text: {
+        default_value: checkoutNoteDefaultValue,
+        maximum_length: maximumLength,
+      },
+    },
+  ];
 }
 
 export async function POST() {
@@ -75,6 +118,7 @@ export async function POST() {
       unitPriceCents: String(cart.pricing.unitPriceCents),
     };
 
+    const customFields = buildCustomFields();
     const checkoutSession = await stripe.checkout.sessions.create({
       mode: "payment",
       payment_method_types: resolvePaymentMethodTypes(),
@@ -82,6 +126,8 @@ export async function POST() {
       metadata,
       client_reference_id: order.id,
       customer_email: session.user.email ?? undefined,
+      custom_text: buildCustomText(),
+      custom_fields: customFields.length ? customFields : undefined,
       success_url: `${DEFAULT_APP_URL}/obrigado?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${DEFAULT_APP_URL}/certificados?checkout=cancelado`,
     });

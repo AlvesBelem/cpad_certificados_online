@@ -201,7 +201,6 @@ export function HonraMeritoAssembleiaCertificateBuilder() {
             <Button
               type="button"
               size="sm"
-              className="bg-emerald-700 text-white hover:bg-emerald-800"
               onClick={handleGenerateBulkPdfs}
               disabled={isGenerating || isBatchGenerating}
             >
