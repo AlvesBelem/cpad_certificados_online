@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, CheckCircle2, Clock, Download, Printer, ShieldCheck, Wand2 } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -76,35 +76,8 @@ const certificatePreviews = [
   },
 ];
 
-const steps = [
-  {
-    title: "Escolha o certificado",
-    description: "Selecione o modelo que precisa. Todos já vêm prontos para preencher.",
-    icon: <Wand2 className="h-5 w-5 text-primary" />,
-  },
-  {
-    title: "Insira as informações",
-    description: "Digite os dados da igreja e do evento e veja a prévia em tempo real.",
-    icon: <Printer className="h-5 w-5 text-primary" />,
-  },
-  {
-    title: "Gere o PDF",
-    description: "Baixe o PDF finalizado e realize a impressão a partir dele quando quiser.",
-    icon: <Download className="h-5 w-5 text-primary" />,
-  },
-];
 
-const highlights = [
-  { title: "Templates aprovados", description: "Arte revisada e pronta para uso. Mantemos o padrao visual original.", icon: <ShieldCheck className="h-5 w-5 text-primary" /> },
-  { title: "Cobranca simples", description: "Pague so o que emitir com descontos progressivos por volume.", icon: <CheckCircle2 className="h-5 w-5 text-primary" /> },
-  { title: "Entrega rapida", description: "PDF pronto para imprimir logo apos o pagamento.", icon: <Clock className="h-5 w-5 text-primary" /> },
-];
 
-const pricingTiers = [
-  { title: "1 a 10 certificados", price: "R$ 2,50 cada", description: "Para datas pontuais e eventos menores." },
-  { title: "11 a 50 certificados", price: "R$ 2,00 cada", description: "Melhor custo para periodos com varias turmas." },
-  { title: "51 certificados ou mais", price: "R$ 1,80 cada", description: "Desconto para quem emite em escala." },
-];
 
 export default function LandingPage() {
   return (
@@ -126,58 +99,56 @@ function Hero() {
   return (
     <div className="grid gap-10 md:grid-cols-[1.1fr,0.9fr] md:items-center">
       <div className="space-y-6">
-        <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-          Planos pagos por certificado
-        </p>
         <h1 className="text-balance text-4xl font-bold tracking-tight text-foreground md:text-5xl">
-          Certificados prontos para batismo, casamento e ministerio com cobranca por volume.
+          Emita certificados evangélicos com agilidade, clareza e credibilidade.
         </h1>
         <p className="text-balance text-lg text-muted-foreground">
-          Versao para igrejas, eventos e pessoas que precisam emitir certificados pagos. Escolha o modelo, pague por unidade e gere o PDF em minutos.
+          Ideal para igrejas que valorizam excelência e precisam emitir em escala.
         </p>
+        <ul className="space-y-2 text-base text-muted-foreground">
+          <li>📄 Certificados prontos para Batismo, Casamento, Discipulado, Ordenação e muito mais</li>
+          <li>📥 Emissão em massa com importação de planilha .xlsx</li>
+          <li>💰 Cobrança por volume, sem mensalidade. Mais você emite, menos paga.</li>
+        </ul>
+        <ul className="space-y-2 text-base text-muted-foreground">
+          <li>✅ Modelos revisados e aprovados</li>
+          <li>✅ PDF pronto para imprimir</li>
+          <li>✅ Emissão rápida individual ou por lote</li>
+          <li>✅ Preços a partir de R$1,80</li>
+        </ul>
+        <hr className="border-border/60" />
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild size="lg" className="h-12 px-8 text-base">
             <Link href="/certificados">
-              Escolher certificado
+              Começar a emitir certificados
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="h-12 px-8 text-base">
-            <Link href="/login">Cadastrar ou fazer login</Link>
+            <Link href="/certificados#modelos">Ver modelos disponíveis</Link>
           </Button>
-        </div>
-        <div className="flex flex-wrap gap-6 text-sm text-muted-foreground">
-          <span className="flex items-center gap-2">
-            <Printer className="h-4 w-4 text-primary" /> Impressao a partir do PDF gerado
-          </span>
-          <span className="flex items-center gap-2">
-            <CheckCircle2 className="h-4 w-4 text-primary" /> Valores progressivos por volume
-          </span>
-          <span className="flex items-center gap-2">
-            <ShieldCheck className="h-4 w-4 text-primary" /> Modelos revisados
-          </span>
         </div>
       </div>
 
       <Card className="border-primary/30 bg-primary/5">
         <CardHeader>
-          <CardTitle>O que voce encontra aqui</CardTitle>
+          <CardTitle>Benefícios imediatos</CardTitle>
           <CardDescription className="text-base">
-            Certificados aprovados por igrejas locais, focados em clareza e em impressao.
+            Tudo que o time de secretaria precisa para manter o padrão visual impecável.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 text-sm text-muted-foreground">
           <div className="flex items-center justify-between rounded-xl border border-primary/15 bg-background/60 px-4 py-3">
-            <span>Modelos prontos</span>
-            <span className="text-xl font-semibold text-foreground">10+</span>
+            <span>🖼 Templates padronizados</span>
+            <span className="text-xl font-semibold text-foreground">15+</span>
           </div>
           <div className="flex items-center justify-between rounded-xl border border-primary/15 bg-background/60 px-4 py-3">
-            <span>PDF em poucos cliques</span>
-            <span className="text-xl font-semibold text-foreground">Sim</span>
+            <span>📥 Importação em lote</span>
+            <span className="text-xl font-semibold text-foreground">Planilha .xlsx</span>
           </div>
           <div className="flex items-center justify-between rounded-xl border border-primary/15 bg-background/60 px-4 py-3">
-            <span>Pagamento por emissao</span>
-            <span className="text-xl font-semibold text-foreground">De R$ 1,80 a R$ 2,50</span>
+            <span>💰 Preços inteligentes</span>
+            <span className="text-xl font-semibold text-foreground">R$1,80 a R$2,50</span>
           </div>
         </CardContent>
       </Card>
@@ -189,25 +160,20 @@ function Pricing() {
   return (
     <section className="space-y-6 rounded-3xl border border-border/80 bg-card px-6 py-10">
       <div className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-widest text-primary">Planos pagos</p>
-        <h2 className="text-3xl font-bold tracking-tight">Pague apenas pelos certificados que emitir.</h2>
+        <h2 className="text-3xl font-bold tracking-tight">Pague só o que emitir — sem surpresas.</h2>
         <p className="text-muted-foreground">
-          Valores por faixa para atender tanto eventos unicos quanto emissoes recorrentes.
+          <strong>Modelo de preço inteligente:</strong>
+        </p>
+        <ul className="space-y-2 text-base text-muted-foreground">
+          <li>1 a 10 certificados – R$2,50 cada</li>
+          <li>11 a 50 certificados – R$2,00 cada</li>
+          <li>51+ certificados – R$1,80 cada</li>
+        </ul>
+        <p className="text-base text-muted-foreground">
+          💡 Dica esperta: Faltou 1 certificado pra mudar de faixa? A gente avisa antes do pagamento.
         </p>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {pricingTiers.map((tier) => (
-          <Card key={tier.title} className="border-border/70 bg-background/70">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-lg">{tier.title}</CardTitle>
-              <CardDescription className="text-base font-semibold text-foreground">{tier.price}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{tier.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <hr className="border-border/60" />
     </section>
   );
 }
@@ -228,11 +194,14 @@ function TemplateGrid() {
   return (
     <section id="modelos" className="space-y-6">
       <div className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-widest text-primary">Modelos prontos</p>
-        <h2 className="text-3xl font-bold tracking-tight">Escolha o certificado e personalize os campos.</h2>
-        <p className="text-muted-foreground">
-          Os layouts foram mantidos intactos para preservar o padrão. Basta informar os dados e imprimir.
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-widest text-primary">Fluxo completo</p>
+        <h2 className="text-3xl font-bold tracking-tight">Faça tudo em minutos, com padrão visual impecável.</h2>
+        <ol className="list-decimal space-y-2 pl-5 text-base text-muted-foreground">
+          <li>Escolha o modelo</li>
+          <li>Preencha ou importe dados via planilha .xlsx</li>
+          <li>Gere o PDF pronto para impressão</li>
+          <li>Pague só pelo que usar</li>
+        </ol>
       </div>
 
       <div className="overflow-hidden rounded-3xl bg-gradient-to-r from-primary/8 via-card/70 to-background p-4 shadow-lg">
@@ -301,36 +270,37 @@ function TemplateGrid() {
   );
 }
 function HowItWorks() {
+  const resources = [
+    "?? Templates prontos e padronizados",
+    "?? Importa??o via planilha .xlsx para emiss?o em massa",
+    "? Menos tempo preenchendo, mais tempo cuidando das pessoas",
+    "?? PDF pronto para imprimir com qualidade profissional",
+  ];
+
   return (
     <section className="grid gap-6 rounded-3xl border border-border/80 bg-card px-6 py-10 md:grid-cols-[1fr,1.1fr]">
       <div className="space-y-4">
-        <p className="text-sm font-semibold uppercase tracking-widest text-primary">Como funciona</p>
-        <h2 className="text-3xl font-bold tracking-tight">Um fluxo simples para gerar certificados pagos.</h2>
-        <p className="text-muted-foreground">
-          A cobranca acontece por certificado dentro das faixas acima. Escolha o modelo, preencha e exporte o PDF.
-        </p>
+        <p className="text-sm font-semibold uppercase tracking-widest text-primary">Recursos que importam</p>
+        <h2 className="text-3xl font-bold tracking-tight">Recursos que facilitam a vida da secretaria da igreja:</h2>
+        <ul className="space-y-2 text-base text-muted-foreground">
+          {resources.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <hr className="border-border/60" />
         <Button asChild className="mt-2 w-fit">
           <Link href="/certificados">
-            Ir para os certificados
+            Conferir modelos dispon?veis
             <ArrowRight className="ml-2 h-4 w-4" />
           </Link>
         </Button>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {steps.map((step, index) => (
-          <Card key={step.title} className="border-border/60 bg-background/70">
-            <CardHeader className="flex flex-row items-center gap-3 space-y-0">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                {index + 1}
-              </div>
-              <div className="flex items-center gap-2 text-primary">
-                {step.icon}
-              </div>
+      <div className="grid gap-4 md:grid-cols-2">
+        {resources.map((item) => (
+          <Card key={item} className="border-border/60 bg-background/70">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold text-foreground">{item}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
-              <CardTitle className="text-lg">{step.title}</CardTitle>
-              <p className="text-sm text-muted-foreground">{step.description}</p>
-            </CardContent>
           </Card>
         ))}
       </div>
@@ -340,29 +310,16 @@ function HowItWorks() {
 
 function Highlights() {
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 rounded-3xl border border-border/80 bg-card px-6 py-10">
       <div className="space-y-3">
-        <p className="text-sm font-semibold uppercase tracking-widest text-primary">Diferenciais</p>
-        <h2 className="text-3xl font-bold tracking-tight">Pensado para quem precisa pagar e emitir em escala.</h2>
-        <p className="text-muted-foreground">
-          Mantivemos apenas o essencial: os certificados, a cobranca por faixa e o PDF pronto para impressao.
-        </p>
+        <h2 className="text-3xl font-bold tracking-tight">Comece agora com zero burocracia</h2>
+        <ul className="space-y-2 text-base text-muted-foreground">
+          <li>? Sem mensalidades</li>
+          <li>? Interface simples</li>
+          <li>? Emiss?o com 3 cliques</li>
+        </ul>
       </div>
-      <div className="grid gap-4 md:grid-cols-3">
-        {highlights.map((highlight) => (
-          <Card key={highlight.title} className="border-border/60">
-            <CardHeader className="flex flex-row items-center gap-3 space-y-0">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                {highlight.icon}
-              </div>
-              <CardTitle className="text-lg">{highlight.title}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground">{highlight.description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <hr className="border-border/60" />
     </section>
   );
 }
@@ -370,21 +327,25 @@ function Highlights() {
 function FinalCta() {
   return (
     <section className="rounded-3xl border border-dashed border-border/70 bg-primary/5 px-6 py-10 text-center">
-      <p className="text-sm font-semibold uppercase tracking-widest text-primary">
-        Pronto para usar
-      </p>
-      <h2 className="mt-3 text-3xl font-bold tracking-tight">
-        Acesse os certificados pagos e gere o documento agora mesmo.
-      </h2>
+      <h2 className="text-3xl font-bold tracking-tight">Fácil de começar, fácil de escalar</h2>
       <p className="mt-2 text-muted-foreground">
-        Valores por quantidade emitida e PDF pronto logo apos o pagamento. Sem burocracia extra.
+        Emita certificados evangélicos com clareza, mantenha o padrão visual e pague apenas pelo que usar.
       </p>
-      <Button asChild size="lg" className="mt-6">
-        <Link href="/certificados">
-          Abrir os certificados
-          <ArrowRight className="ml-2 h-5 w-5" />
+      <div style={{ marginTop: "1rem" }} className="flex flex-col items-center justify-center gap-3 sm:flex-row">
+        <Link
+          href="/certificados"
+          className="btn-primary inline-flex items-center justify-center rounded-full bg-primary px-6 py-3 text-base font-semibold text-background shadow transition hover:bg-primary/90"
+        >
+          Começar a emitir certificados
         </Link>
-      </Button>
+        <Link
+          href="/certificados#modelos"
+          className="btn-secondary inline-flex items-center justify-center rounded-full border border-border px-6 py-3 text-base font-semibold text-foreground transition hover:bg-background"
+        >
+          Ver modelos disponíveis
+        </Link>
+      </div>
+      <hr className="border-border/60" />
     </section>
   );
 }
