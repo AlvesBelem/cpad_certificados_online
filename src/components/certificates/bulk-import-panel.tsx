@@ -408,8 +408,7 @@ function parseCsv(text: string) {
     }
 
     const isDelimiter = char === delimiter && !inQuotes;
-    const isNewline = (char === "
-" || char === "") && !inQuotes;
+    const isNewline = (char === "\n" || char === "\r") && !inQuotes;
 
     if (isDelimiter) {
       currentRow.push(currentCell);
@@ -418,8 +417,7 @@ function parseCsv(text: string) {
     }
 
     if (isNewline) {
-      if (char === "" && nextChar === "
-") {
+      if (char === "\r" && nextChar === "\n") {
         i += 1; // skip CRLF
       }
       currentRow.push(currentCell);
@@ -443,8 +441,7 @@ function parseCsv(text: string) {
 }
 
 function detectDelimiter(text: string) {
-  const firstLine = text.split(/?
-/, 1)[0] ?? "";
+  const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
   const commaCount = (firstLine.match(/,/g) ?? []).length;
   const semicolonCount = (firstLine.match(/;/g) ?? []).length;
   if (semicolonCount > commaCount) return ";";
