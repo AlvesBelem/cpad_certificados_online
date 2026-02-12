@@ -46,6 +46,11 @@ type AddPayload = {
   quantity?: number;
   summary?: string | null;
   previewImage?: string | null;
+  entries?: Array<{
+    quantity?: number;
+    summary?: string | null;
+    previewImage?: string | null;
+  }>;
 };
 
 async function parseResponse(response: Response) {

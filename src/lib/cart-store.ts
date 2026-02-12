@@ -7,6 +7,11 @@ type AddItemInput = {
   quantity?: number;
   summary?: string | null;
   previewImage?: string | null;
+  entries?: Array<{
+    quantity?: number;
+    summary?: string | null;
+    previewImage?: string | null;
+  }>;
 };
 
 type UpdateQuantityInput = {
@@ -36,24 +41,37 @@ export function getCartForUser(userId: string) {
 
 export function addItemToCart(userId: string, input: AddItemInput) {
   const state = getState(userId);
-  const quantity = Math.max(1, input.quantity ?? 1);
   const existing = state.items.find((item) => item.certificateSlug === input.certificateSlug);
 
-  const entry = {
-    id: randomUUID(),
-    quantity,
-    summary: input.summary?.trim() || undefined,
-    previewImage: input.previewImage ?? undefined,
-  };
+  const entriesToAdd =
+    input.entries && input.entries.length
+      ? input.entries.map((entry) => ({
+          id: randomUUID(),
+          quantity: Math.max(1, entry.quantity ?? 1),
+          summary: entry.summary?.trim() || undefined,
+          previewImage: entry.previewImage ?? undefined,
+        }))
+      : [
+          {
+            id: randomUUID(),
+            quantity: Math.max(1, input.quantity ?? 1),
+            summary: input.summary?.trim() || undefined,
+            previewImage: input.previewImage ?? undefined,
+          },
+        ];
+
+  const quantity = entriesToAdd.reduce((sum, entry) => sum + entry.quantity, 0);
 
   if (existing) {
     existing.quantity += quantity;
-    existing.entries.push(entry);
-    if (entry.summary) {
-      existing.summary = entry.summary;
+    existing.entries.push(...entriesToAdd);
+    const latestSummary = [...entriesToAdd].reverse().find((entry) => entry.summary)?.summary;
+    const latestPreview = [...entriesToAdd].reverse().find((entry) => entry.previewImage)?.previewImage;
+    if (latestSummary) {
+      existing.summary = latestSummary;
     }
-    if (entry.previewImage) {
-      existing.previewImage = entry.previewImage;
+    if (latestPreview) {
+      existing.previewImage = latestPreview;
     }
   } else {
     state.items.push({
@@ -61,9 +79,9 @@ export function addItemToCart(userId: string, input: AddItemInput) {
       certificateSlug: input.certificateSlug,
       title: input.title,
       quantity,
-      summary: entry.summary,
-      previewImage: entry.previewImage,
-      entries: [entry],
+      summary: [...entriesToAdd].find((entry) => entry.summary)?.summary,
+      previewImage: [...entriesToAdd].find((entry) => entry.previewImage)?.previewImage,
+      entries: entriesToAdd,
     });
   }
 

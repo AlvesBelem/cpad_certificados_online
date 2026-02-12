@@ -9,6 +9,13 @@ type AddOptions = {
   summary?: string | null;
   quantity?: number;
   previewImage?: string | null;
+  entries?: Array<{
+    quantity?: number;
+    summary?: string | null;
+    previewImage?: string | null;
+  }>;
+  feedbackMessage?: string;
+  skipUpsellToast?: boolean;
 };
 
 export function useCertificateCartAction(slug: string, title: string) {
@@ -22,19 +29,22 @@ export function useCertificateCartAction(slug: string, title: string) {
 
   const handleAddToCart = useCallback(
     async (options?: AddOptions) => {
+      const safeSlug = slug || "certificado";
+      const safeTitle = title || "Certificado";
       try {
         const updated = await addItem({
-          certificateSlug: slug,
-          title,
+          certificateSlug: safeSlug,
+          title: safeTitle,
           quantity: Math.max(1, options?.quantity ?? 1),
           summary: options?.summary?.trim() || undefined,
           previewImage: options?.previewImage,
+          entries: options?.entries,
         });
 
-        toast.success("Certificado adicionado ao carrinho");
+        toast.success(options?.feedbackMessage ?? "Certificado adicionado ao carrinho");
         openCart({ autoCloseMs: 5000 });
 
-        if (updated.pricing.upsell && updated.pricing.nextUnitPriceCents) {
+        if (!options?.skipUpsellToast && updated.pricing.upsell && updated.pricing.nextUnitPriceCents) {
           const nextUnit = currencyFormatter.format(updated.pricing.nextUnitPriceCents / 100);
           const nextTotal = currencyFormatter.format(updated.pricing.upsell.newTotalCents / 100);
           toast.message("Falta 1 para reduzir o valor unitario", {

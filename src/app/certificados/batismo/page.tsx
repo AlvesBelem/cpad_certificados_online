@@ -75,7 +75,13 @@ export default function CertificadoBatismoPage() {
           <CardDescription>Preencha os campos abaixo para gerar o certificado de batismo.</CardDescription>
         </CardHeader>
         <CardContent>
-          <IgrejaCertificateBuilder igrejaNome={igrejaNome || "Igreja"} logoUrl={logoUrl || undefined} logoPath={logoPath} />
+          <IgrejaCertificateBuilder
+            igrejaNome={igrejaNome || "Igreja"}
+            logoUrl={logoUrl || undefined}
+            logoPath={logoPath}
+            certificateSlug="batismo"
+            certificateTitle="Certificado de Batismo"
+          />
         </CardContent>
       </Card>
     </main>

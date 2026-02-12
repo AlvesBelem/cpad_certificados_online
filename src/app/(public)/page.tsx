@@ -120,12 +120,13 @@ function Hero() {
         <div className="flex flex-col gap-3 sm:flex-row">
           <Button asChild size="lg" className="h-12 px-8 text-base">
             <Link href="/certificados">
-              Começar a emitir certificados
+              Come?ar a emitir certificados
               <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
           </Button>
           <Button asChild size="lg" variant="outline" className="h-12 px-8 text-base">
-            <Link href="/certificados#modelos">Ver modelos disponíveis</Link>
+            <Link href="/certificados#modelos">Ver modelos dispon?veis</Link>
+
           </Button>
         </div>
       </div>

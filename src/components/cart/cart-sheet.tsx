@@ -5,38 +5,188 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2, LogIn, ShoppingCart, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import jsPDF from "jspdf";
+import JSZip from "jszip";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { authClient } from "@/lib/auth-client";
-import { normalizeRole, UserRole } from "@/lib/roles";
+import { canFinalizeOffline } from "@/lib/roles";
 import { useCartContext } from "./cart-provider";
 import { useCartSheet } from "./cart-sheet-context";
 import { cn } from "@/lib/utils";
 
-const MANUAL_PAYMENT_OPTIONS = [
-  { value: "DINHEIRO", label: "Dinheiro" },
-  { value: "PIX_MANUAL", label: "Pix (manual)" },
-  { value: "TRANSFERENCIA", label: "Transferencia" },
-] as const;
+type CartEntry = {
+  id: string;
+  quantity: number;
+  summary?: string | null;
+  previewImage?: string | null;
+};
+
+type MinimalCartItem = {
+  id: string;
+  certificateSlug: string;
+  title: string;
+  quantity: number;
+  summary?: string | null;
+  previewImage?: string | null;
+  entries?: CartEntry[];
+};
+
+type DownloadUnit = {
+  slug: string;
+  title: string;
+  summary?: string | null;
+  previewImage?: string | null;
+  sequence: number;
+};
+
+type DownloadMode = "grouped" | "separate";
+
+const offlinePaymentMethods = [
+  { value: "dinheiro", label: "Dinheiro" },
+  { value: "cartao", label: "Cart?o" },
+  { value: "pix", label: "Pix" },
+  { value: "transferencia", label: "Transfer?ncia" },
+  { value: "outro", label: "Outro" },
+];
+
+async function downloadCertificates(items: MinimalCartItem[], mode: DownloadMode) {
+  if (!items.length) return false;
+
+  const units: DownloadUnit[] = [];
+  items.forEach((item) => {
+    const entryList =
+      item.entries && item.entries.length
+        ? item.entries
+        : [
+            {
+              id: `${item.id}-default`,
+              quantity: item.quantity,
+              summary: item.summary,
+              previewImage: item.previewImage,
+            },
+          ];
+
+    entryList.forEach((entry) => {
+      const copies = Math.max(1, entry.quantity || 1);
+      for (let copyIndex = 0; copyIndex < copies; copyIndex += 1) {
+        units.push({
+          slug: item.certificateSlug,
+          title: item.title,
+          summary: entry.summary ?? item.summary,
+          previewImage: entry.previewImage ?? item.previewImage,
+          sequence: units.length + 1,
+        });
+      }
+    });
+  });
+
+  const files: { filename: string; data: ArrayBuffer }[] = [];
+
+  if (mode === "grouped") {
+    const PAGE_LIMIT = 25;
+    for (let start = 0, fileIndex = 1; start < units.length; start += PAGE_LIMIT, fileIndex += 1) {
+      const chunk = units.slice(start, start + PAGE_LIMIT);
+      if (!chunk.length) continue;
+
+      const pdf = new jsPDF("landscape", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      chunk.forEach((unit, index) => {
+        if (index > 0) {
+          pdf.addPage();
+        }
+        if (unit.previewImage) {
+          pdf.addImage(unit.previewImage, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
+        } else {
+          const title = unit.title || "Certificado";
+          const summary = unit.summary || "";
+          pdf.setFontSize(16);
+          pdf.text(title, pageWidth / 2, pageHeight / 2 - 4, { align: "center" });
+          if (summary) {
+            pdf.setFontSize(12);
+            pdf.text(summary, pageWidth / 2, pageHeight / 2 + 6, { align: "center" });
+          }
+        }
+      });
+
+      const data = pdf.output("arraybuffer");
+      const baseName =
+        chunk.length === 1 && units.length === 1
+          ? `certificado-${chunk[0].slug || chunk[0].sequence}`
+          : `certificados-${fileIndex}`;
+      files.push({ filename: `${baseName}.pdf`, data });
+    }
+  } else {
+    units.forEach((unit) => {
+      const pdf = new jsPDF("landscape", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      if (unit.previewImage) {
+        pdf.addImage(unit.previewImage, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
+      } else {
+        const title = unit.title || "Certificado";
+        const summary = unit.summary || "";
+        pdf.setFontSize(16);
+        pdf.text(title, pageWidth / 2, pageHeight / 2 - 4, { align: "center" });
+        if (summary) {
+          pdf.setFontSize(12);
+          pdf.text(summary, pageWidth / 2, pageHeight / 2 + 6, { align: "center" });
+        }
+      }
+      const data = pdf.output("arraybuffer");
+      const filename = `certificado-${unit.slug || unit.sequence}-${unit.sequence}.pdf`;
+      files.push({ filename, data });
+    });
+  }
+
+  if (!files.length) {
+    toast.error("Nao foi possivel gerar os PDF(s). Refaca o pedido.");
+    return false;
+  }
+
+  if (files.length === 1) {
+    const [file] = files;
+    const blob = new Blob([file.data], { type: "application/pdf" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = file.filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    return true;
+  }
+
+  const zip = new JSZip();
+  for (const file of files) {
+    zip.file(file.filename, file.data);
+  }
+  const blob = await zip.generateAsync({ type: "blob" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = mode === "grouped" ? "certificados.pdf.zip" : "certificados-separados.zip";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  return true;
+}
 
 export function CartSheet() {
   const { isOpen, closeCart } = useCartSheet();
   const { formatted, loading, mutating, error, updateQuantity, clear, bulkImporting } = useCartContext();
   const router = useRouter();
   const [checkingOut, setCheckingOut] = useState(false);
-  const [manualProcessing, setManualProcessing] = useState(false);
-  const [manualMethod, setManualMethod] = useState<string>(MANUAL_PAYMENT_OPTIONS[0].value);
-  const [manualNotes, setManualNotes] = useState("");
+  const [showDownloadModal, setShowDownloadModal] = useState(false);
+  const [downloadMode, setDownloadMode] = useState<DownloadMode | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<string>(offlinePaymentMethods[0]?.value ?? "dinheiro");
   const { data: session } = authClient.useSession();
+  const sessionUser = session?.user as { role?: string } | undefined;
+  const canFinishOffline = canFinalizeOffline(sessionUser?.role);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -69,14 +219,11 @@ export function CartSheet() {
     [],
   );
 
-  const normalizedRole = normalizeRole((session?.user as { role?: string } | undefined)?.role);
-  const shouldUseManualCheckout = normalizedRole === UserRole.ADMIN || normalizedRole === UserRole.FUNCIONARIO;
-
   const handleRemoveItem = async (itemId: string) => {
     try {
       await updateQuantity(itemId, 0);
     } catch {
-      // erros tratados no provider
+      // o hook ja exibe mensagens de erro
     }
   };
 
@@ -84,53 +231,7 @@ export function CartSheet() {
     try {
       await clear();
     } catch {
-      // ignorar
-    }
-  };
-
-  const handleManualCheckout = async () => {
-    if (!formatted || items.length === 0 || manualProcessing) return;
-    if (bulkImporting) {
-      toast.info("Aguarde a importacao dos certificados antes de finalizar o pedido.");
-      return;
-    }
-    setManualProcessing(true);
-    try {
-      const manualItems = formatted.items.map((item) => ({
-        certificateSlug: item.certificateSlug,
-        title: item.title,
-        quantity: item.quantity,
-        unitPriceCents: item.unitPriceCents,
-        summary: item.summary ?? null,
-      }));
-      const response = await fetch("/api/admin/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          paymentMethod: manualMethod,
-          status: "PAID",
-          quantity: formatted.pricing.totalQuantity,
-          totalAmountInCents: formatted.pricing.totalCents,
-          notes: manualNotes.trim() ? manualNotes.trim() : undefined,
-          items: manualItems,
-        }),
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok) {
-        throw new Error(data?.message || "Nao foi possivel registrar o pagamento manual.");
-      }
-      toast.success("Pagamento manual registrado.");
-      setManualNotes("");
-      await clear();
-      closeCart();
-      router.refresh();
-    } catch (error) {
-      console.error("Erro ao registrar pagamento manual:", error);
-      toast.error(error instanceof Error ? error.message : "Nao foi possivel registrar o pagamento manual.");
-    } finally {
-      setManualProcessing(false);
+      // erros tratados externamente
     }
   };
 
@@ -140,33 +241,64 @@ export function CartSheet() {
       toast.info("Aguarde a importacao dos certificados antes de finalizar o pedido.");
       return;
     }
+    if (!canFinishOffline) {
+      toast.info(
+        "O checkout online estar? dispon?vel em breve. Somente administradores e funcion?rios podem finalizar pagamentos presenciais durante os testes.",
+      );
+      return;
+    }
+    setShowDownloadModal(true);
+  };
+
+  const processDownload = async (mode: DownloadMode) => {
+    if (!formatted || items.length === 0) return;
     setCheckingOut(true);
+    setDownloadMode(mode);
+    const params = new URLSearchParams();
+    if (formatted.pricing.total) {
+      params.set("total", formatted.pricing.total);
+    }
+    if (formatted.pricing.totalQuantity) {
+      params.set("quantity", String(formatted.pricing.totalQuantity));
+    }
+    if (formatted.pricing.unitPrice) {
+      params.set("unit", formatted.pricing.unitPrice);
+    }
+    if (paymentMethod) {
+      params.set("method", paymentMethod);
+    }
     try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await response.json().catch(() => null);
-      if (!response.ok || !data?.url) {
-        toast.error(data?.message ?? "Nao foi possivel iniciar o checkout.");
-        setCheckingOut(false);
-        return;
+      const downloadPayload: MinimalCartItem[] = items.map((item) => ({
+        id: item.id,
+        certificateSlug: item.certificateSlug,
+        title: item.title,
+        quantity: item.quantity,
+        summary: item.summary,
+        previewImage: item.previewImage,
+        entries: item.entries?.map((entry) => ({
+          id: entry.id,
+          quantity: entry.quantity,
+          summary: entry.summary,
+          previewImage: entry.previewImage ?? item.previewImage,
+        })),
+      }));
+      const success = await downloadCertificates(downloadPayload, mode);
+      if (success) {
+        await clear();
+        closeCart();
+        const query = params.toString();
+        router.push(query ? `/obrigado?${query}` : "/obrigado");
       }
-      window.location.href = data.url as string;
-    } catch (error) {
-      console.error("Erro ao iniciar checkout:", error);
-      toast.error("Nao foi possivel iniciar o checkout. Tente novamente.");
+    } catch {
+      toast.error("Nao foi possivel finalizar o pedido. Tente novamente.");
+    } finally {
       setCheckingOut(false);
+      setShowDownloadModal(false);
+      setDownloadMode(null);
     }
   };
 
-  const submitDisabled =
-    items.length === 0 ||
-    mutating ||
-    bulkImporting ||
-    (shouldUseManualCheckout ? manualProcessing : checkingOut);
+  const submitDisabled = items.length === 0 || mutating || checkingOut || bulkImporting;
 
   return (
     <>
@@ -223,7 +355,9 @@ export function CartSheet() {
               </div>
               <p className="text-base font-medium text-foreground">Carrinho vazio</p>
               <p className="text-sm text-muted-foreground">
-                {showLoginCta ? "Faca login para salvar certificados no carrinho." : "Crie um certificado e clique em adicionar ao carrinho."}
+                {showLoginCta
+                  ? "Faca login para salvar certificados no carrinho."
+                  : "Crie um certificado e clique em adicionar ao carrinho."}
               </p>
               {showLoginCta ? (
                 <Button asChild size="sm" className="mt-2">
@@ -245,16 +379,10 @@ export function CartSheet() {
                         const entryCount = item.entries?.length ?? 0;
                         if (entryCount === 1) {
                           const summary = item.entries?.[0]?.summary;
-                          return summary ? (
-                            <p className="text-xs text-muted-foreground">Para: {summary}</p>
-                          ) : null;
+                          return summary ? <p className="text-xs text-muted-foreground">Para: {summary}</p> : null;
                         }
                         if (entryCount > 1) {
-                          return (
-                            <p className="text-xs text-muted-foreground">
-                              {entryCount} certificados diferentes
-                            </p>
-                          );
+                          return <p className="text-xs text-muted-foreground">{entryCount} certificados diferentes</p>;
                         }
                         if (item.summary) {
                           return <p className="text-xs text-muted-foreground">Para: {item.summary}</p>;
@@ -263,9 +391,7 @@ export function CartSheet() {
                       })()}
                       <p className="mt-1 text-xs text-muted-foreground">Quantidade: {item.quantity}</p>
                     </div>
-                    <div className="text-sm font-semibold text-foreground">
-                      {currency.format(item.totalCents / 100)}
-                    </div>
+                    <div className="text-sm font-semibold text-foreground">{currency.format(item.totalCents / 100)}</div>
                   </div>
                   <div className="mt-3 flex items-center justify-between text-xs text-muted-foreground">
                     <span className="font-medium text-foreground">Valor unitario {unitLabel}</span>
@@ -301,57 +427,88 @@ export function CartSheet() {
               <span>{totalLabel}</span>
             </div>
           </div>
-          <p className="mt-4 text-xs text-muted-foreground">
-            {shouldUseManualCheckout
-              ? "Selecione o metodo utilizado no recebimento (dinheiro, Pix ou transferencia) e registre o pagamento manual."
-              : "Voce sera redirecionado ao Stripe para concluir o pagamento. Apos a confirmacao, retornaremos automaticamente para liberar os certificados."}
-          </p>
-          {shouldUseManualCheckout ? (
-            <div className="mt-4 space-y-3 rounded-2xl border border-dashed border-border/60 p-3">
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Forma de pagamento</Label>
-                <Select value={manualMethod} onValueChange={setManualMethod}>
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue placeholder="Selecione" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {MANUAL_PAYMENT_OPTIONS.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs text-muted-foreground">Observacoes (opcional)</Label>
-                <Textarea
-                  value={manualNotes}
-                  onChange={(event) => setManualNotes(event.target.value)}
-                  rows={2}
-                  placeholder="Ex.: pago em dinheiro no balao"
-                />
-              </div>
+          {canFinishOffline ? (
+            <div className="mt-4 space-y-2">
+              <label htmlFor="paymentMethod" className="text-xs uppercase tracking-[0.3em] text-muted-foreground">
+                Forma de pagamento presencial
+              </label>
+              <select
+                id="paymentMethod"
+                value={paymentMethod}
+                onChange={(event) => setPaymentMethod(event.target.value)}
+                className="w-full rounded-2xl border border-border/60 bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              >
+                {offlinePaymentMethods.map((method) => (
+                  <option key={method.value} value={method.value}>
+                    {method.label}
+                  </option>
+                ))}
+              </select>
             </div>
-          ) : null}
+          ) : (
+            <p className="mt-4 text-xs text-muted-foreground">
+              Checkout online em desenvolvimento. Apenas administradores e funcion?rios conseguem finalizar pagamentos neste ambiente de teste.
+            </p>
+          )}
           <Button
             type="button"
             className="mt-3 w-full"
             disabled={submitDisabled}
-            onClick={shouldUseManualCheckout ? handleManualCheckout : handleCheckout}
+            onClick={handleCheckout}
           >
-            {shouldUseManualCheckout
-              ? manualProcessing
-                ? "Registrando pagamento..."
-                : "Registrar pagamento manual"
-              : checkingOut
-                ? "Redirecionando..."
-                : bulkImporting || mutating
-                  ? "Importando certificados..."
-                  : "Ir para pagamento"}
+            {checkingOut
+              ? "Processando..."
+              : bulkImporting || mutating
+                ? "Importando certificados..."
+                : canFinishOffline
+                  ? "Finalizar pedido"
+                  : "Ir para checkout"}
           </Button>
         </footer>
       </aside>
+
+      {showDownloadModal ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <div className="w-[90%] max-w-md rounded-2xl border border-border bg-card p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-foreground">Escolha o formato dos PDFs</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Baixe cada certificado separado ou arquivos agrupados de at? 25 p?ginas.
+            </p>
+            <div className="mt-4 grid gap-3">
+              <Button
+                type="button"
+                variant={downloadMode === "separate" ? "default" : "outline"}
+                className="w-full"
+                disabled={checkingOut}
+                onClick={() => processDownload("separate")}
+              >
+                {checkingOut && downloadMode === "separate" ? "Gerando..." : "PDFs separados"}
+              </Button>
+              <Button
+                type="button"
+                variant={downloadMode === "grouped" ? "default" : "outline"}
+                className="w-full"
+                disabled={checkingOut}
+                onClick={() => processDownload("grouped")}
+              >
+                {checkingOut && downloadMode === "grouped" ? "Gerando..." : "PDFs agrupados (25 por arquivo)"}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                disabled={checkingOut}
+                onClick={() => {
+                  setShowDownloadModal(false);
+                  setDownloadMode(null);
+                }}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </>
   );
 }

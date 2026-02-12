@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState, type ChangeEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import type { Worksheet } from "exceljs";
 import { toast } from "sonner";
 import { Download, Upload } from "lucide-react";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { slugify } from "@/lib/slugify";
+import { clearBulkImportState, setBulkImportState } from "@/lib/bulk-import-store";
 
 export type BulkImportField = {
   key: string;
@@ -42,6 +43,7 @@ export function BulkImportPanel({
   const [parsing, setParsing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
 
   const normalizedFields = useMemo(
     () =>
@@ -56,6 +58,33 @@ export function BulkImportPanel({
 
   const resolvedSlug = useMemo(() => certificateSlug || slugify(certificateTitle), [certificateSlug, certificateTitle]);
   const templateFileName = `modelo-${resolvedSlug || "certificado"}.xlsx`;
+
+  useEffect(() => {
+    if (rows.length > 0) {
+      setBulkImportState(resolvedSlug, rows, onApplyRow);
+    } else {
+      clearBulkImportState(resolvedSlug);
+    }
+
+    return () => clearBulkImportState(resolvedSlug);
+  }, [onApplyRow, resolvedSlug, rows]);
+
+  useEffect(() => {
+    const target = panelRef.current?.nextElementSibling as HTMLElement | null;
+    if (!target) return;
+    const hasCertificateForm = Boolean(target.querySelector(".certificate-form"));
+    if (!hasCertificateForm) return;
+
+    if (rows.length > 0) {
+      target.classList.add("bulk-hide-fields");
+    } else {
+      target.classList.remove("bulk-hide-fields");
+    }
+
+    return () => {
+      target.classList.remove("bulk-hide-fields");
+    };
+  }, [rows.length]);
 
   const handleDownloadTemplate = async () => {
     const ExcelJS = await import("exceljs");
@@ -108,10 +137,12 @@ export function BulkImportPanel({
       setRows(parsed);
       onRowsChange?.(parsed);
       setFileName(file.name);
+      setBulkImportState(resolvedSlug, parsed, onApplyRow);
       toast.success(`Importamos ${parsed.length} linha(s) da planilha.`);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Nao foi possivel ler a planilha enviada.";
       setError(message);
+      clearBulkImportState(resolvedSlug);
     } finally {
       setParsing(false);
       if (inputRef.current) {
@@ -136,6 +167,7 @@ export function BulkImportPanel({
     onRowsChange?.([]);
     setFileName(null);
     setError(null);
+    clearBulkImportState(resolvedSlug);
     if (inputRef.current) {
       inputRef.current.value = "";
     }
@@ -144,13 +176,14 @@ export function BulkImportPanel({
   const previewRows = rows.slice(0, 5);
 
   return (
-    <section className="rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm shadow-sm">
+    <section ref={panelRef} className="rounded-3xl border border-dashed border-primary/40 bg-primary/5 p-4 text-sm shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-primary/70">Importacao em massa</p>
           <h3 className="text-base font-semibold text-foreground">Planilha Excel</h3>
           <p className="text-xs text-muted-foreground">
             Baixe o modelo, preencha as colunas e importe para aplicar rapidamente cada linha ao formulario do certificado.
+            Com uma planilha carregada, os campos do certificado ficam ocultos e os dados vao direto para a previa.
           </p>
           {showManualOrder ? (
             <p className="text-[11px] text-muted-foreground">
@@ -195,8 +228,8 @@ export function BulkImportPanel({
         <div className="mt-4 space-y-3">
           <p className="text-xs text-muted-foreground">
             Encontramos <span className="font-semibold text-foreground">{rows.length}</span>{" "}
-            {rows.length === 1 ? "linha" : "linhas"}. Clique em &ldquo;Aplicar&rdquo; para preencher o formulario com os dados
-            de cada participante.
+            {rows.length === 1 ? "linha" : "linhas"}. Clique em \"Aplicar\" para preencher o formulario com os dados de
+            cada participante.
           </p>
           <div className="max-h-64 overflow-auto rounded-2xl border border-border/60 bg-background/70">
             <table className="w-full min-w-full text-left text-xs text-muted-foreground">
@@ -235,6 +268,11 @@ export function BulkImportPanel({
           ) : null}
         </div>
       ) : null}
+      <style jsx global>{`
+        .bulk-hide-fields > :not(.certificate-form) {
+          display: none !important;
+        }
+      `}</style>
     </section>
   );
 }
@@ -340,7 +378,7 @@ function normalizeValue(value: string) {
   return value
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]/g, "");
 }
 
@@ -370,7 +408,8 @@ function parseCsv(text: string) {
     }
 
     const isDelimiter = char === delimiter && !inQuotes;
-    const isNewline = (char === "\n" || char === "\r") && !inQuotes;
+    const isNewline = (char === "
+" || char === "") && !inQuotes;
 
     if (isDelimiter) {
       currentRow.push(currentCell);
@@ -379,7 +418,8 @@ function parseCsv(text: string) {
     }
 
     if (isNewline) {
-      if (char === "\r" && nextChar === "\n") {
+      if (char === "" && nextChar === "
+") {
         i += 1; // skip CRLF
       }
       currentRow.push(currentCell);
@@ -403,7 +443,8 @@ function parseCsv(text: string) {
 }
 
 function detectDelimiter(text: string) {
-  const firstLine = text.split(/\r?\n/, 1)[0] ?? "";
+  const firstLine = text.split(/?
+/, 1)[0] ?? "";
   const commaCount = (firstLine.match(/,/g) ?? []).length;
   const semicolonCount = (firstLine.match(/;/g) ?? []).length;
   if (semicolonCount > commaCount) return ";";

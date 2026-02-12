@@ -31,19 +31,26 @@ export async function POST(request: NextRequest) {
   try {
     const session = await requireSessionForAction();
     const body = await request.json().catch(() => ({}));
-    const { certificateSlug, title, quantity, summary, previewImage } = body as {
+    const { certificateSlug, title, quantity, summary, previewImage, entries } = body as {
       certificateSlug?: string;
       title?: string;
       quantity?: number;
       summary?: string;
       previewImage?: string;
+      entries?: Array<{ quantity?: number; summary?: string | null; previewImage?: string | null }>;
     };
 
-    if (!certificateSlug || !title) {
-      return badRequest("Informe o certificado (slug e titulo) para adicionar ao carrinho.");
-    }
+    const resolvedSlug = certificateSlug?.trim() || "certificado";
+    const resolvedTitle = title?.trim() || "Certificado";
 
-    const cart = addItemToCart(session.user.id, { certificateSlug, title, quantity, summary, previewImage });
+    const cart = addItemToCart(session.user.id, {
+      certificateSlug: resolvedSlug,
+      title: resolvedTitle,
+      quantity,
+      summary,
+      previewImage,
+      entries,
+    });
 
     return NextResponse.json(cart, { status: 201 });
   } catch (error) {
